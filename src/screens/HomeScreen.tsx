@@ -20,9 +20,9 @@ type Props = {
 };
 
 const FeatureCard = ({
-  icon, title, desc, color, onPress,
-}: { icon: string; title: string; desc: string; color: string[]; onPress?: () => void }) => (
-  <TouchableOpacity style={styles.featureCard} onPress={onPress} activeOpacity={0.85}>
+  icon, title, desc, color, onPress, active = false,
+}: { icon: string; title: string; desc: string; color: string[]; onPress?: () => void; active?: boolean }) => (
+  <TouchableOpacity style={styles.featureCard} onPress={onPress} activeOpacity={0.85} disabled={!onPress}>
     <LinearGradient colors={['rgba(255,255,255,0.04)', 'rgba(255,255,255,0.01)']} style={styles.featureCardInner}>
       <View style={[styles.featureIcon, { borderColor: color[0] + '44' }]}>
         <LinearGradient colors={color as any} style={styles.featureIconGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
@@ -31,9 +31,15 @@ const FeatureCard = ({
       </View>
       <Text style={styles.featureTitle}>{title}</Text>
       <Text style={styles.featureDesc}>{desc}</Text>
-      <View style={styles.featureSoon}>
-        <Text style={styles.featureSoonText}>SOON</Text>
-      </View>
+      {active ? (
+        <View style={[styles.featureSoon, { backgroundColor: 'rgba(0,102,255,0.2)', borderColor: 'rgba(0,163,255,0.5)' }]}>
+          <Text style={[styles.featureSoonText, { color: '#60AFFF' }]}>TAP TO OPEN</Text>
+        </View>
+      ) : (
+        <View style={styles.featureSoon}>
+          <Text style={styles.featureSoonText}>SOON</Text>
+        </View>
+      )}
     </LinearGradient>
   </TouchableOpacity>
 );
@@ -112,7 +118,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           <View style={styles.featureGrid}>
-            <FeatureCard icon="📄" title="Upload Docs" desc="Camera & gallery" color={['#0066FF', '#00A3FF']} />
+            <FeatureCard icon="📄" title="Documents" desc="Upload & manage" color={['#0066FF', '#00A3FF']} onPress={() => navigation.navigate('Documents')} active />
             <FeatureCard icon="📅" title="Timeline" desc="Medical history" color={['#7C3AED', '#A855F7']} />
             <FeatureCard icon="🤖" title="AI Analysis" desc="Smart insights" color={['#059669', '#10B981']} />
             <FeatureCard icon="📈" title="Trends" desc="Health metrics" color={['#DC2626', '#F87171']} />

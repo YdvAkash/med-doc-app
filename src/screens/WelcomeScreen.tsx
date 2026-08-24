@@ -7,6 +7,7 @@ import {
   Dimensions,
   TouchableOpacity,
   StatusBar,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -57,14 +58,11 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
           style={[styles.logoContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
         >
           <Animated.View style={[styles.logoCircle, { transform: [{ scale: pulse }] }]}>
-            <LinearGradient
-              colors={['#0066FF', '#00CFFF']}
-              style={styles.logoGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.logoIcon}>⚕</Text>
-            </LinearGradient>
+            <Image 
+              source={require('../../assets/logo.png')} 
+              style={styles.logoImage} 
+              resizeMode="contain"
+            />
           </Animated.View>
         </Animated.View>
 
@@ -170,16 +168,10 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 15,
   },
-  logoGradient: {
+  logoImage: {
     width: 100,
     height: 100,
     borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoIcon: {
-    fontSize: 48,
-    color: '#fff',
   },
   titleArea: {
     alignItems: 'flex-start',
