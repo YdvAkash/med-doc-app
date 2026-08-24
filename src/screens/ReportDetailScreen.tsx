@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, ActivityIndicator, Alert, Linking, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, ActivityIndicator, Alert, Linking, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getDocument, deleteDocument } from '../services/api';
 import { colors, spacing, typography } from '../theme';
@@ -68,11 +69,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-        <View style={styles.appBar}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
-            <MaterialIcons name="arrow-back" size={24} color={colors['on-surface-variant']} />
-          </TouchableOpacity>
-        </View>
+
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
       </SafeAreaView>
     );
@@ -82,11 +79,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-        <View style={styles.appBar}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
-            <MaterialIcons name="arrow-back" size={24} color={colors['on-surface-variant']} />
-          </TouchableOpacity>
-        </View>
+
         <Text style={{ textAlign: 'center', marginTop: 20, color: colors['on-surface-variant'] }}>Report not found.</Text>
       </SafeAreaView>
     );
@@ -96,21 +89,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
       
-      {/* TopAppBar */}
-      <View style={styles.appBar}>
-        <TouchableOpacity 
-          style={styles.iconButton} 
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialIcons name="arrow-back" size={24} color={colors['on-surface-variant']} />
-        </TouchableOpacity>
-        
-        <Text style={styles.appBarTitle}>MedDoc</Text>
-        
-        <TouchableOpacity style={styles.iconButton} onPress={handleDelete}>
-          <MaterialIcons name="delete-outline" size={24} color={colors.error} />
-        </TouchableOpacity>
-      </View>
+
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Header section */}
@@ -149,9 +128,9 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.8}>
-            <MaterialIcons name="share" size={20} color={colors.primary} />
-            <Text style={styles.secondaryButtonText}>Share</Text>
+          <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.8} onPress={handleDelete}>
+            <MaterialIcons name="delete-outline" size={20} color={colors.error} />
+            <Text style={[styles.secondaryButtonText, {color: colors.error}]}>Delete</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

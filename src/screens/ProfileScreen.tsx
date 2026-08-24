@@ -145,15 +145,7 @@ export const ProfileScreen = ({ navigation }: any) => {
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
       
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.appBar}>
-          <Text style={styles.appBarTitle}>Profile</Text>
-          <TouchableOpacity 
-            style={styles.editButton} 
-            onPress={() => isEditing ? handleSave() : setIsEditing(true)}
-          >
-            <Text style={styles.editButtonText}>{isEditing ? 'Save' : 'Edit'}</Text>
-          </TouchableOpacity>
-        </View>
+
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <ScrollView 
@@ -204,6 +196,16 @@ export const ProfileScreen = ({ navigation }: any) => {
             
           </ScrollView>
         </KeyboardAvoidingView>
+        
+        {/* Floating Action Button for Edit/Save */}
+        <TouchableOpacity 
+          style={styles.fab} 
+          onPress={() => isEditing ? handleSave() : setIsEditing(true)}
+          activeOpacity={0.9}
+        >
+          <MaterialIcons name={isEditing ? "check" : "edit"} size={24} color={colors['on-primary']} />
+        </TouchableOpacity>
+        
       </SafeAreaView>
     </View>
   );
@@ -320,6 +322,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 32,
+    right: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.27,
+    shadowRadius: 4.65,
   },
   fieldIconWrapper: {
     width: 40,

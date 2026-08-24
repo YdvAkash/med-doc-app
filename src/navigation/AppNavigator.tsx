@@ -22,18 +22,6 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const TabIcon = ({ name, focused, color }: { name: any, focused: boolean, color: string }) => {
-  if (focused) {
-    return (
-      <View style={{
-        backgroundColor: colors['secondary-container'],
-        paddingHorizontal: 16,
-        paddingVertical: 4,
-        borderRadius: 20,
-      }}>
-        <MaterialIcons name={name} size={24} color={colors.primary} />
-      </View>
-    );
-  }
   return <MaterialIcons name={name} size={24} color={color} />;
 };
 

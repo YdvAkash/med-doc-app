@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, Modal, ActivityIndicator, ScrollView, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Modal, ActivityIndicator, ScrollView, TextInput, Alert, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -153,21 +154,7 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
       
-      {/* TopAppBar */}
-      <View style={styles.appBar}>
-        <TouchableOpacity 
-          style={styles.iconButton} 
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialIcons name="arrow-back" size={24} color={colors['on-surface-variant']} />
-        </TouchableOpacity>
-        
-        <Text style={styles.appBarTitle}>MedDoc</Text>
-        
-        <TouchableOpacity style={styles.iconButton}>
-          <MaterialIcons name="translate" size={24} color={colors['on-surface-variant']} />
-        </TouchableOpacity>
-      </View>
+
 
       {/* Main Content */}
       <View style={styles.content}>
