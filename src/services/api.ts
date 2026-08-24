@@ -23,3 +23,70 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+export const uploadDocument = async (fileUri: string, mimeType: string, fileName: string, onUploadProgress?: (progressEvent: any) => void) => {
+  const formData = new FormData();
+  formData.append('file', {
+    uri: fileUri,
+    type: mimeType,
+    name: fileName,
+  } as any);
+
+  const response = await api.post('/documents/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    onUploadProgress,
+  });
+  return response.data;
+};
+
+export const getDocuments = async () => {
+  const response = await api.get('/documents');
+  return response.data;
+};
+
+export const getDocument = async (id: number) => {
+  const response = await api.get(`/documents/${id}`);
+  return response.data;
+};
+
+export const deleteDocument = async (id: number) => {
+  const response = await api.delete(`/documents/${id}`);
+  return response.data;
+};
+
+export const getDocumentText = async (id: number) => {
+  const response = await api.get(`/documents/${id}/text`);
+  return response.data;
+};
+
+export const confirmDate = async (id: number, date: string) => {
+  const response = await api.post(`/documents/${id}/confirm-date`, { extractedEventDate: date });
+  return response.data;
+};
+
+export const getTimeline = async () => {
+  const response = await api.get('/timeline');
+  return response.data;
+};
+
+export const getProfile = async () => {
+  const response = await api.get('/auth/profile');
+  return response.data;
+};
+
+export const updateProfile = async (data: any) => {
+  const response = await api.put('/auth/profile', data);
+  return response.data;
+};
+
+export const loginUser = async (data: any) => {
+  const response = await api.post('/auth/login', data);
+  return response.data;
+};
+
+export const registerUser = async (data: any) => {
+  const response = await api.post('/auth/register', data);
+  return response.data;
+};

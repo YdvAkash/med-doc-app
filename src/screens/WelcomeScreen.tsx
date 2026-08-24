@@ -9,10 +9,10 @@ import {
   StatusBar,
   Image,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { colors, typography } from '../theme';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -41,16 +41,7 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" />
-      <LinearGradient
-        colors={['#0A0A0F', '#0D1B2A', '#0A0A0F']}
-        style={StyleSheet.absoluteFillObject}
-      />
-
-      {/* Glow orbs */}
-      <View style={styles.orb1} />
-      <View style={styles.orb2} />
-      <View style={styles.orb3} />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
       <View style={styles.content}>
         {/* Logo & Branding */}
@@ -89,18 +80,11 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
           style={[styles.buttonArea, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
         >
           <TouchableOpacity
-            style={styles.primaryBtnWrapper}
+            style={styles.primaryBtn}
             onPress={() => navigation.navigate('Register')}
             activeOpacity={0.85}
           >
-            <LinearGradient
-              colors={['#0066FF', '#00A3FF']}
-              style={styles.primaryBtn}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            >
-              <Text style={styles.primaryBtnText}>Get Started</Text>
-            </LinearGradient>
+            <Text style={styles.primaryBtnText}>Get Started</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -119,34 +103,7 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0A0A0F',
-  },
-  orb1: {
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(0,102,255,0.12)',
-    top: -60,
-    left: -80,
-  },
-  orb2: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(0,207,255,0.08)',
-    top: height * 0.35,
-    right: -50,
-  },
-  orb3: {
-    position: 'absolute',
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: 'rgba(0,102,255,0.07)',
-    bottom: 40,
-    left: -60,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -162,11 +119,12 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 30,
-    shadowColor: '#0066FF',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.6,
+    shadowOpacity: 0.2,
     shadowRadius: 20,
-    elevation: 15,
+    elevation: 10,
+    backgroundColor: colors.surface,
   },
   logoImage: {
     width: 100,
@@ -179,23 +137,20 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 52,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors['on-background'],
     letterSpacing: 1.5,
     marginBottom: 14,
-    textShadowColor: 'rgba(0,102,255,0.4)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 10,
   },
   tagline: {
     fontSize: 26,
     fontWeight: '300',
-    color: '#8899AA',
+    color: colors['on-surface-variant'],
     lineHeight: 36,
   },
   taglineHighlight: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#00A3FF',
+    color: colors.primary,
     lineHeight: 36,
   },
   pillsRow: {
@@ -206,34 +161,32 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 20,
-    backgroundColor: 'rgba(0,102,255,0.12)',
+    backgroundColor: colors['secondary-container'],
     borderWidth: 1,
-    borderColor: 'rgba(0,163,255,0.25)',
+    borderColor: colors['outline-variant'],
   },
   pillText: {
-    color: '#99CCFF',
+    color: colors.primary,
     fontSize: 13,
     fontWeight: '600',
   },
   buttonArea: {
     gap: 14,
   },
-  primaryBtnWrapper: {
-    borderRadius: 18,
-    shadowColor: '#0066FF',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.55,
-    shadowRadius: 16,
-    elevation: 12,
-  },
   primaryBtn: {
     height: 60,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   primaryBtnText: {
-    color: '#FFFFFF',
+    color: colors['on-primary'],
     fontSize: 17,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -244,11 +197,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(0,163,255,0.35)',
-    backgroundColor: 'rgba(0,102,255,0.06)',
+    borderColor: colors.outline,
+    backgroundColor: colors.surface,
   },
   secondaryBtnText: {
-    color: '#80BFFF',
+    color: colors.primary,
     fontSize: 16,
     fontWeight: '600',
   },
