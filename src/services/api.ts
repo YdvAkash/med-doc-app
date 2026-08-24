@@ -109,3 +109,13 @@ export const uploadProfilePicture = async (fileUri: string, mimeType: string, fi
   });
   return response.data;
 };
+
+export const askQuestion = async (message: string) => {
+  const response = await api.post('/chat/ask', { message });
+  return response.data;
+};
+
+export const getChatHistory = async (page = 0, size = 20) => {
+  const response = await api.get(`/chat/history?page=${page}&size=${size}`);
+  return response.data;
+};

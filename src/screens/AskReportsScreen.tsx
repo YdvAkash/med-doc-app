@@ -1,18 +1,89 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
 import { useAuthStore } from '../store/useAuth';
+import { askQuestion, getChatHistory } from '../services/api';
+import Markdown from 'react-native-markdown-display';
 
 type Props = {
   navigation: any;
 };
 
+type ChatMessage = {
+  id: number | string;
+  messageType: 'user_question' | 'ai_response';
+  content: string;
+  createdAt?: string;
+};
+
 export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
   const [inputText, setInputText] = useState('');
-  const { user } = useAuthStore();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
   
+  const { user } = useAuthStore();
   const initials = (user?.name || user?.email || 'U').slice(0, 2).toUpperCase();
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      setIsLoading(true);
+      const res = await getChatHistory(0, 50);
+      if (res.success && res.data && res.data.content) {
+        // Backend returns paginated response, sorted by newest first (descending)
+        // We need it in ascending order to render from top to bottom.
+        const reversed = res.data.content.reverse();
+        setMessages(reversed);
+      }
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!inputText.trim()) return;
+    
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      messageType: 'user_question',
+      content: inputText.trim(),
+    };
+    
+    setMessages(prev => [...prev, userMsg]);
+    const question = inputText.trim();
+    setInputText('');
+    setIsTyping(true);
+    
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
+    try {
+      const res = await askQuestion(question);
+      if (res.success && res.data) {
+        setMessages(prev => [...prev, res.data]);
+      }
+    } catch (error) {
+      console.error('Error asking question:', error);
+    } finally {
+      setIsTyping(false);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  };
+  
+  const handleSuggestion = (text: string) => {
+    setInputText(text);
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -38,7 +109,12 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
         style={styles.keyboardView} 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          ref={scrollViewRef}
+          contentContainerStyle={styles.content} 
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+        >
           {/* Header Section */}
           <View style={styles.headerSection}>
             <Text style={styles.title}>Ask Your Reports</Text>
@@ -53,63 +129,75 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
                 <MaterialIcons name="smart-toy" size={20} color={colors.primary} />
               </View>
               <View style={[styles.messageBubble, styles.messageBubbleLeft]}>
-                <Text style={styles.messageText}>Hello! I'm here to help you understand your medical records. What would you like to know?</Text>
+                <Markdown style={markdownStyles}>
+                  Hello! I'm here to help you understand your medical records. What would you like to know?
+                </Markdown>
                 
-                <Text style={styles.suggestedTitle}>SUGGESTED QUESTIONS:</Text>
-                <View style={styles.suggestedChips}>
-                  <TouchableOpacity style={styles.chip}>
-                    <Text style={styles.chipText}>"What was my blood sugar last year?"</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.chip}>
-                    <Text style={styles.chipText}>"Explain my latest blood test."</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.chip}>
-                    <Text style={styles.chipText}>"What was my latest HbA1c?"</Text>
-                  </TouchableOpacity>
-                </View>
+                {messages.length === 0 && (
+                  <>
+                    <Text style={styles.suggestedTitle}>SUGGESTED QUESTIONS:</Text>
+                    <View style={styles.suggestedChips}>
+                      <TouchableOpacity style={styles.chip} onPress={() => handleSuggestion("What was my blood sugar last year?")}>
+                        <Text style={styles.chipText}>"What was my blood sugar last year?"</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.chip} onPress={() => handleSuggestion("Explain my latest blood test.")}>
+                        <Text style={styles.chipText}>"Explain my latest blood test."</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.chip} onPress={() => handleSuggestion("What was my latest HbA1c?")}>
+                        <Text style={styles.chipText}>"What was my latest HbA1c?"</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                )}
               </View>
             </View>
 
-            {/* User Message */}
-            <View style={[styles.messageRow, styles.messageRowRight]}>
-              <View style={[styles.messageBubble, styles.messageBubbleRight]}>
-                <Text style={styles.messageTextRight}>What was my blood sugar last year?</Text>
-              </View>
-              <View style={styles.userAvatar}>
-                <Text style={styles.userAvatarText}>{initials}</Text>
-              </View>
-            </View>
-
-            {/* AI Response */}
-            <View style={[styles.messageRow, styles.messageRowLeft]}>
-              <View style={styles.botAvatar}>
-                <MaterialIcons name="smart-toy" size={20} color={colors.primary} />
-              </View>
-              <View style={[styles.messageBubble, styles.messageBubbleLeft]}>
-                <Text style={styles.messageText}>Here is a summary of your fasting blood sugar readings from last year based on your lab reports:</Text>
+            {isLoading && messages.length === 0 ? (
+              <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+            ) : (
+              messages.map((msg) => {
+                const isUser = msg.messageType === 'user_question';
                 
-                <View style={styles.table}>
-                  <View style={styles.tableHeader}>
-                    <Text style={styles.th}>Date</Text>
-                    <Text style={[styles.th, { textAlign: 'right' }]}>Value (mg/dL)</Text>
+                return (
+                  <View key={msg.id} style={[styles.messageRow, isUser ? styles.messageRowRight : styles.messageRowLeft]}>
+                    {!isUser && (
+                      <View style={styles.botAvatar}>
+                        <MaterialIcons name="smart-toy" size={20} color={colors.primary} />
+                      </View>
+                    )}
+                    
+                    <View style={[styles.messageBubble, isUser ? styles.messageBubbleRight : styles.messageBubbleLeft]}>
+                      {isUser ? (
+                        <Text style={styles.messageTextRight}>
+                          {msg.content}
+                        </Text>
+                      ) : (
+                        <Markdown style={markdownStyles}>
+                          {msg.content}
+                        </Markdown>
+                      )}
+                    </View>
+                    
+                    {isUser && (
+                      <View style={styles.userAvatar}>
+                        <Text style={styles.userAvatarText}>{initials}</Text>
+                      </View>
+                    )}
                   </View>
-                  <View style={styles.tableRow}>
-                    <Text style={styles.td}>Mar 15, 2023</Text>
-                    <Text style={[styles.td, { textAlign: 'right', color: colors.error, fontWeight: '500' }]}>125</Text>
-                  </View>
-                  <View style={styles.tableRow}>
-                    <Text style={styles.td}>Sep 10, 2023</Text>
-                    <Text style={[styles.td, { textAlign: 'right', color: colors.primary, fontWeight: '500' }]}>108</Text>
-                  </View>
+                );
+              })
+            )}
+            
+            {isTyping && (
+              <View style={[styles.messageRow, styles.messageRowLeft]}>
+                 <View style={styles.botAvatar}>
+                  <MaterialIcons name="smart-toy" size={20} color={colors.primary} />
                 </View>
-
-                <View style={styles.summaryBox}>
-                  <Text style={styles.summaryText}>
-                    <Text style={{ fontWeight: 'bold' }}>Summary:</Text> Your blood sugar went down from 125 to 108 mg/dL. Great progress!
-                  </Text>
+                <View style={[styles.messageBubble, styles.messageBubbleLeft, { padding: 12 }]}>
+                  <ActivityIndicator size="small" color={colors.primary} />
                 </View>
               </View>
-            </View>
+            )}
           </View>
         </ScrollView>
 
@@ -129,9 +217,9 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
               multiline
             />
             
-            <TouchableOpacity style={styles.sendButton}>
-              <View style={styles.sendButtonContainer}>
-                <MaterialIcons name="send" size={18} color={colors['on-primary']} />
+            <TouchableOpacity style={styles.sendButton} onPress={handleSend} disabled={isTyping || !inputText.trim()}>
+              <View style={[styles.sendButtonContainer, (!inputText.trim() || isTyping) && { backgroundColor: colors['surface-container-highest'] }]}>
+                <MaterialIcons name="send" size={18} color={(!inputText.trim() || isTyping) ? colors['on-surface-variant'] : colors['on-primary']} />
               </View>
             </TouchableOpacity>
           </View>
@@ -375,4 +463,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors['on-surface-variant'],
   },
+});
+
+const markdownStyles = StyleSheet.create({
+  body: {
+    ...typography.bodyMd,
+    color: colors['on-surface'],
+  },
+  heading1: {
+    ...typography.headlineMd,
+    color: colors['on-surface'],
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  heading2: {
+    ...typography.headlineSm,
+    color: colors['on-surface'],
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  heading3: {
+    ...typography.titleLg,
+    color: colors['on-surface'],
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  paragraph: {
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  list_item: {
+    ...typography.bodyMd,
+    color: colors['on-surface'],
+    marginVertical: 2,
+  },
+  strong: {
+    fontWeight: 'bold',
+    color: colors['on-surface'],
+  }
 });

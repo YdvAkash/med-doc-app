@@ -137,7 +137,7 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
       await confirmDate(currentDocId, finalDate);
       Alert.alert('Success', 'Document added successfully!');
       setUploadState('idle');
-      navigation.navigate('ReportsTab');
+      navigation.navigate('MainTabs', { screen: 'ReportsTab' });
     } catch (error) {
       console.error('Confirm date failed', error);
       Alert.alert('Error', 'Failed to confirm date.');
