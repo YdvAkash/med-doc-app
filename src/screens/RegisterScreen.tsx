@@ -17,7 +17,8 @@ import { useAuthStore } from '../store/useAuth';
 import { colors, typography } from '../theme';
 
 export const RegisterScreen = ({ navigation }: any) => {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,13 +26,13 @@ export const RegisterScreen = ({ navigation }: any) => {
   const { register, isLoading, error } = useAuthStore();
 
   const handleRegister = async () => {
-    if (!name || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
     
     try {
-      await register(name, email, password);
+      await register(firstName, lastName, email, password);
     } catch (err: any) {
       Alert.alert('Registration Failed', err.message || 'Something went wrong');
     }
@@ -63,10 +64,21 @@ export const RegisterScreen = ({ navigation }: any) => {
               <MaterialIcons name="person" size={20} color={colors.outline} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Full Name"
+                placeholder="First Name"
                 placeholderTextColor={colors.outline}
-                value={name}
-                onChangeText={setName}
+                value={firstName}
+                onChangeText={setFirstName}
+              />
+            </View>
+            
+            <View style={styles.inputContainer}>
+              <MaterialIcons name="person-outline" size={20} color={colors.outline} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Last Name"
+                placeholderTextColor={colors.outline}
+                value={lastName}
+                onChangeText={setLastName}
               />
             </View>
 

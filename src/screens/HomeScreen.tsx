@@ -14,7 +14,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/useAuth';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, typography, spacing } from '../theme';
-import { getDocuments } from '../services/api';
+import { getDocuments, getProfile } from '../services/api';
 import { useIsFocused } from '@react-navigation/native';
 
 type Props = {
@@ -23,7 +23,8 @@ type Props = {
 
 export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuthStore();
-  const firstName = user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
+  const [profile, setProfile] = useState<any>(null);
+  const firstName = profile?.firstName || user?.firstName || user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
   
   const [recentReports, setRecentReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,8 +33,18 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   useEffect(() => {
     if (isFocused) {
       fetchRecentReports();
+      fetchUserProfile();
     }
   }, [isFocused]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const res = await getProfile();
+      setProfile(res.data);
+    } catch (err) {
+      console.log('Error fetching user profile', err);
+    }
+  };
 
   const fetchRecentReports = async () => {
     setLoading(true);
@@ -69,9 +80,17 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.greeting}>Hello, {firstName}</Text>
             <Text style={styles.subtitle}>Your health records are safe here.</Text>
           </View>
-          <View style={styles.avatar}>
-            <MaterialIcons name="person" size={28} color={colors.surface} />
-          </View>
+          <TouchableOpacity 
+            style={styles.avatar}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('ProfileTab')}
+          >
+            {profile?.profilePictureUrl ? (
+              <Image source={{ uri: profile.profilePictureUrl }} style={{ width: '100%', height: '100%' }} />
+            ) : (
+              <MaterialIcons name="person" size={28} color={colors.surface} />
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Primary Action Button */}

@@ -10,12 +10,15 @@ import {
   Platform,
   StatusBar,
   Animated,
-  TextInput
+  TextInput,
+  Image,
+  Alert
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/useAuth';
-import { getProfile, updateProfile } from '../services/api';
+import { getProfile, updateProfile, uploadProfilePicture } from '../services/api';
 import { colors, typography, spacing } from '../theme';
 
 export const ProfileScreen = ({ navigation }: any) => {
@@ -25,11 +28,13 @@ export const ProfileScreen = ({ navigation }: any) => {
   
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     bloodGroup: '',
     dateOfBirth: '',
+    profilePictureUrl: '',
   });
 
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -43,11 +48,13 @@ export const ProfileScreen = ({ navigation }: any) => {
       const res = await getProfile();
       setProfile(res.data);
       setFormData({
-        name: res.data.name || '',
+        firstName: res.data.firstName || '',
+        lastName: res.data.lastName || '',
         email: res.data.email || '',
-        phone: res.data.phone || '',
+        phone: res.data.emergencyContactPhone || res.data.phone || '',
         bloodGroup: res.data.bloodGroup || '',
         dateOfBirth: res.data.dateOfBirth || '',
+        profilePictureUrl: res.data.profilePictureUrl || '',
       });
     } catch (err) {
       console.log('Fetch profile error:', err);
@@ -64,6 +71,38 @@ export const ProfileScreen = ({ navigation }: any) => {
       setIsEditing(false);
     } catch (err) {
       console.log('Update error:', err);
+      Alert.alert('Error', 'Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setLoading(true);
+        const asset = result.assets[0];
+        // Upload document
+        const filename = asset.uri.split('/').pop() || 'profile.jpg';
+        // Need to parse mime type from extension or use image/jpeg
+        const uploadRes = await uploadProfilePicture(asset.uri, 'image/jpeg', filename);
+        if (uploadRes.data?.profilePictureUrl) {
+          const newUrl = uploadRes.data.profilePictureUrl;
+          setFormData(prev => ({ ...prev, profilePictureUrl: newUrl }));
+          // Auto save profile with new image (uploadProfilePicture already saves it in backend)
+          await fetchProfile();
+        }
+      }
+    } catch (error) {
+      console.error('Image pick error', error);
+      Alert.alert('Error', 'Failed to upload profile picture');
     } finally {
       setLoading(false);
     }
@@ -77,7 +116,7 @@ export const ProfileScreen = ({ navigation }: any) => {
     );
   }
 
-  const initials = (profile?.name || user?.email || 'U').slice(0, 2).toUpperCase();
+  const initials = ((profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '')).toUpperCase() || user?.email?.slice(0, 2).toUpperCase() || 'U';
 
   const renderField = (icon: any, label: string, key: keyof typeof formData, editable: boolean = true) => (
     <View style={styles.fieldContainer}>
@@ -123,22 +162,27 @@ export const ProfileScreen = ({ navigation }: any) => {
           >
             <View style={styles.header}>
               <View style={styles.avatarWrapper}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{initials}</Text>
-                </View>
-                {isEditing && (
-                  <View style={styles.editAvatarBadge}>
-                    <MaterialIcons name="camera-alt" size={16} color={colors['on-primary']} />
+                {profile?.profilePictureUrl || formData.profilePictureUrl ? (
+                  <Image source={{ uri: formData.profilePictureUrl || profile.profilePictureUrl }} style={styles.avatarImage} />
+                ) : (
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>{initials}</Text>
                   </View>
                 )}
+                {isEditing && (
+                  <TouchableOpacity style={styles.editAvatarBadge} onPress={handlePickImage} activeOpacity={0.8}>
+                    <MaterialIcons name="camera-alt" size={16} color={colors['on-primary']} />
+                  </TouchableOpacity>
+                )}
               </View>
-              <Text style={styles.name}>{profile?.name || 'User'}</Text>
+              <Text style={styles.name}>{`${profile?.firstName || ''} ${profile?.lastName || ''}`.trim() || 'User'}</Text>
               <Text style={styles.email}>{profile?.email}</Text>
             </View>
 
             <View style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Personal Information</Text>
-              {renderField('person', 'Full Name', 'name')}
+              {renderField('person', 'First Name', 'firstName')}
+              {renderField('person-outline', 'Last Name', 'lastName')}
               {renderField('email', 'Email Address', 'email', false)}
               {renderField('phone', 'Phone Number', 'phone')}
             </View>
@@ -216,6 +260,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: colors.primary,
   },
   avatarText: {
     fontSize: 36,

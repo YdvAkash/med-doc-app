@@ -15,16 +15,18 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
   const [activeChip, setActiveChip] = useState('All');
   const isFocused = useIsFocused();
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   useEffect(() => {
     if (isFocused) {
       fetchReports();
     }
-  }, [isFocused]);
+  }, [isFocused, activeChip, searchQuery]);
 
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const res = await getDocuments();
+      const res = await getDocuments(0, 20, searchQuery, activeChip);
       setReports(res.data.content || []);
     } catch (err) {
       console.log('Error fetching reports', err);
@@ -43,7 +45,7 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const chips = ['All', 'Blood Tests', 'Prescriptions', 'Scans', 'Other'];
+  const chips = ['All', 'Blood Tests', 'Prescriptions', 'Scans', 'Haematological report', 'Blood', 'Liver', 'Kidney', 'Other'];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -78,6 +80,8 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
             style={styles.searchInput}
             placeholder="Search by report name or date"
             placeholderTextColor={colors.outline}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
         </View>
 

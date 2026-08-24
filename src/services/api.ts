@@ -41,8 +41,11 @@ export const uploadDocument = async (fileUri: string, mimeType: string, fileName
   return response.data;
 };
 
-export const getDocuments = async () => {
-  const response = await api.get('/documents');
+export const getDocuments = async (page = 0, size = 20, search?: string, category?: string) => {
+  let url = `/documents?page=${page}&size=${size}`;
+  if (search) url += `&search=${encodeURIComponent(search)}`;
+  if (category && category !== 'All') url += `&category=${encodeURIComponent(category)}`;
+  const response = await api.get(url);
   return response.data;
 };
 
@@ -88,5 +91,21 @@ export const loginUser = async (data: any) => {
 
 export const registerUser = async (data: any) => {
   const response = await api.post('/auth/register', data);
+  return response.data;
+};
+
+export const uploadProfilePicture = async (fileUri: string, mimeType: string, fileName: string) => {
+  const formData = new FormData();
+  formData.append('file', {
+    uri: fileUri,
+    type: mimeType,
+    name: fileName,
+  } as any);
+
+  const response = await api.post('/auth/profile/picture', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
