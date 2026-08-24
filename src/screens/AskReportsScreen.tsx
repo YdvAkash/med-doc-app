@@ -470,7 +470,7 @@ const markdownStyles = StyleSheet.create({
     marginBottom: 4,
   },
   heading3: {
-    ...typography.titleLg,
+    ...typography.headlineSm,
     color: colors['on-surface'],
     marginTop: 8,
     marginBottom: 4,

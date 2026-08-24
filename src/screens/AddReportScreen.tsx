@@ -22,7 +22,7 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
   const [dateCandidates, setDateCandidates] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [manualDate, setManualDate] = useState<string>('');
-  
+
   const handleDocumentSelection = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -46,14 +46,14 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (!permission.granted) return;
         result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ['images'],
           quality: 0.8,
         });
       } else {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) return;
         result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ['images'],
           quality: 0.8,
         });
       }
@@ -77,12 +77,12 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
         setProgress(percentCompleted);
       });
-      
+
       const docId = res.data.id;
       setCurrentDocId(docId);
       setUploadState('processing');
       pollDocumentStatus(docId);
-      
+
     } catch (error) {
       console.error('Upload failed', error);
       Alert.alert('Upload Failed', 'There was an error uploading your document.');
@@ -95,7 +95,7 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
       try {
         const res = await getDocument(id);
         const status = res.data.processingStatus;
-        
+
         if (status === 'completed') {
           clearInterval(interval);
           await fetchExtractedData(id);
@@ -153,7 +153,7 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-      
+
 
 
       {/* Main Content */}
@@ -240,7 +240,7 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
               <MaterialIcons name="close" size={24} color={colors['on-surface']} />
             </TouchableOpacity>
           </View>
-          
+
           <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
             <Text style={styles.sectionTitle}>Extracted Text</Text>
             <View style={styles.extractedTextContainer}>
@@ -255,8 +255,8 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={[styles.modalSubtitle, { textAlign: 'left', marginBottom: 16 }]}>Select the date found in the document, or enter manually.</Text>
 
             {dateCandidates.map((cand, idx) => (
-              <TouchableOpacity 
-                key={idx} 
+              <TouchableOpacity
+                key={idx}
                 style={[styles.radioOption, selectedDate === cand.date && styles.radioOptionSelected]}
                 onPress={() => { setSelectedDate(cand.date); setManualDate(''); }}
               >
@@ -268,7 +268,7 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
 
             <View style={styles.manualDateContainer}>
               <Text style={styles.label}>Manual Date Entry (YYYY-MM-DD)</Text>
-              <TextInput 
+              <TextInput
                 style={styles.dateInput}
                 placeholder="e.g. 2026-08-15"
                 placeholderTextColor={colors.outline}

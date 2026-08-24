@@ -6,12 +6,15 @@ interface User {
   id?: string;
   email: string;
   name?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 interface AuthState {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  error: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -22,6 +25,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   token: null,
   isLoading: true,
+  error: null,
   login: async (email, password) => {
     set({ isLoading: true });
     try {
