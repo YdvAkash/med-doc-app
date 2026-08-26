@@ -21,6 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { DocumentService } from '../services/documents';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChevronLeft, Upload, FileText, Trash2, Image, File, AlertCircle, CheckCircle } from 'lucide-react-native';
+import { SkeletonLoader } from '../components/common/SkeletonLoader';
 
 const { width } = Dimensions.get('window');
 
@@ -297,9 +298,11 @@ export const DocumentsScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Document List */}
         {loading ? (
-          <View style={styles.center}>
-            <ActivityIndicator color="#0099FF" size="large" />
-            <Text style={styles.loadingText}>Loading documents...</Text>
+          <View style={{ paddingHorizontal: 20, paddingTop: 20, gap: 12 }}>
+            <SkeletonLoader height={80} style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+            <SkeletonLoader height={80} style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+            <SkeletonLoader height={80} style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+            <SkeletonLoader height={80} style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
           </View>
         ) : documents.length === 0 ? (
           <View style={styles.emptyState}>

@@ -16,7 +16,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, typography, spacing } from '../theme';
 import { getDocuments, getProfile } from '../services/api';
 import { useIsFocused } from '@react-navigation/native';
-
+import { DocumentCard } from '../components/DocumentCard';
+import { SkeletonLoader } from '../components/common/SkeletonLoader';
+import { AnimatedButton } from '../components/common/AnimatedButton';
+import { LinearGradient } from 'expo-linear-gradient';
 type Props = {
   navigation: NativeStackNavigationProp<any>;
 };
@@ -25,7 +28,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuthStore();
   const [profile, setProfile] = useState<any>(null);
   const firstName = profile?.firstName || user?.firstName || user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
-  
+
   const [recentReports, setRecentReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const isFocused = useIsFocused();
@@ -59,28 +62,19 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const getIconForType = (type: string) => {
-    switch (type?.toLowerCase()) {
-      case 'pdf': return 'picture-as-pdf';
-      case 'png':
-      case 'jpg':
-      case 'jpeg': return 'image';
-      default: return 'description';
-    }
-  };
-
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        
+    <LinearGradient colors={[colors.primaryLight, colors.background]} style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTextContainer}>
             <Text style={styles.greeting}>Hello, {firstName}</Text>
             <Text style={styles.subtitle}>Your health records are safe here.</Text>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.avatar}
             activeOpacity={0.8}
             onPress={() => navigation.navigate('ProfileTab')}
@@ -94,14 +88,11 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         {/* Primary Action Button */}
-        <TouchableOpacity 
-          style={styles.primaryButton}
-          activeOpacity={0.8}
+        <AnimatedButton 
+          title="Add Medical Report" 
           onPress={() => navigation.navigate('AddReport')}
-        >
-          <MaterialIcons name="add" size={20} color={colors['on-primary']} />
-          <Text style={styles.primaryButtonText}>Add Medical Report</Text>
-        </TouchableOpacity>
+          style={styles.primaryButton}
+        />
 
         {/* Quick Actions Grid */}
         <View style={styles.grid}>
@@ -148,32 +139,32 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
 
         <View style={styles.recentList}>
           {loading ? (
-            <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 20 }} />
+            <View style={{ gap: 12 }}>
+              <SkeletonLoader height={100} />
+              <SkeletonLoader height={100} />
+              <SkeletonLoader height={100} />
+            </View>
           ) : recentReports.length === 0 ? (
             <Text style={styles.emptyText}>No recent reports found.</Text>
           ) : (
             recentReports.map(report => (
-              <TouchableOpacity 
+              <DocumentCard
                 key={report.id}
-                style={styles.recentCard}
-                activeOpacity={0.7}
+                filename={report.originalFilename}
+                title={report.title}
+                tags={report.tags}
+                date={report.extractedEventDate || report.uploadDate?.split('T')[0]}
+                category={report.category}
+                fileType={report.fileType}
                 onPress={() => navigation.navigate('ReportDetail', { id: report.id })}
-              >
-                <View style={styles.recentIconWrapper}>
-                  <MaterialIcons name={getIconForType(report.fileType)} size={24} color={colors['on-surface-variant']} />
-                </View>
-                <View style={styles.recentInfo}>
-                  <Text style={styles.recentTitle}>{report.originalFilename}</Text>
-                  <Text style={styles.recentDate}>{report.extractedEventDate || report.uploadDate?.split('T')[0]} • Processed</Text>
-                </View>
-                <MaterialIcons name="chevron-right" size={24} color={colors['on-surface-variant']} />
-              </TouchableOpacity>
+              />
             ))
           )}
         </View>
 
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
@@ -287,37 +278,6 @@ const styles = StyleSheet.create({
   },
   recentList: {
     gap: 12,
-  },
-  recentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors['surface-variant'],
-  },
-  recentIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors['surface-container-high'],
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  recentInfo: {
-    flex: 1,
-  },
-  recentTitle: {
-    ...typography.labelLg,
-    color: colors['on-surface'],
-    marginBottom: 4,
-  },
-  recentDate: {
-    ...typography.bodyMd,
-    color: colors['on-surface-variant'],
-    fontSize: 13,
   },
   emptyText: {
     textAlign: 'center',

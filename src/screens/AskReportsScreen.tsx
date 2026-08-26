@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
 import { useAuthStore } from '../store/useAuth';
-import { askQuestion, getChatHistory } from '../services/api';
+import { askQuestion, getChatHistory, getProfile } from '../services/api';
 import Markdown from 'react-native-markdown-display';
 
 type Props = {
@@ -27,10 +27,25 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
   
   const { user } = useAuthStore();
   const initials = (user?.name || user?.email || 'U').slice(0, 2).toUpperCase();
+  const defaultUserAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=4D96FF&color=fff&size=128`;
+
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchHistory();
+    fetchUserProfile();
   }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const res = await getProfile();
+      if (res.data && res.data.profilePictureUrl) {
+        setProfileImage(res.data.profilePictureUrl);
+      }
+    } catch (e) {
+      console.log('Error fetching profile in chat:', e);
+    }
+  };
 
   const fetchHistory = async () => {
     try {
@@ -87,21 +102,31 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
       
-
+      <View style={styles.appBar}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('HomeTab')}>
+          <MaterialIcons name="arrow-back" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.appBarTitle}>Ask Reports</Text>
+        <View style={{ width: 48 }} />
+      </View>
 
       <KeyboardAvoidingView 
         style={styles.keyboardView} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
       >
-        <ScrollView 
-          ref={scrollViewRef}
-          contentContainerStyle={styles.content} 
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-        >
+        <View style={{ flex: 1 }}>
+          <ScrollView 
+            ref={scrollViewRef}
+            contentContainerStyle={styles.content} 
+            showsVerticalScrollIndicator={false}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
+            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          >
           {/* Header Section */}
           <View style={styles.headerSection}>
             <Text style={styles.title}>Ask Your Reports</Text>
@@ -113,7 +138,7 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
             {/* AI Welcome Message */}
             <View style={[styles.messageRow, styles.messageRowLeft]}>
               <View style={styles.botAvatar}>
-                <MaterialIcons name="smart-toy" size={20} color={colors.primary} />
+                <Image source={require('../../assets/logo.png')} style={styles.botAvatarImage} resizeMode="cover" />
               </View>
               <View style={[styles.messageBubble, styles.messageBubbleLeft]}>
                 <Markdown style={markdownStyles}>
@@ -149,7 +174,7 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
                   <View key={msg.id} style={[styles.messageRow, isUser ? styles.messageRowRight : styles.messageRowLeft]}>
                     {!isUser && (
                       <View style={styles.botAvatar}>
-                        <MaterialIcons name="smart-toy" size={20} color={colors.primary} />
+                        <Image source={require('../../assets/logo.png')} style={styles.botAvatarImage} resizeMode="cover" />
                       </View>
                     )}
                     
@@ -167,7 +192,7 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
                     
                     {isUser && (
                       <View style={styles.userAvatar}>
-                        <Text style={styles.userAvatarText}>{initials}</Text>
+                        <Image source={{ uri: profileImage || defaultUserAvatar }} style={styles.userAvatarImage} />
                       </View>
                     )}
                   </View>
@@ -178,7 +203,7 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
             {isTyping && (
               <View style={[styles.messageRow, styles.messageRowLeft]}>
                  <View style={styles.botAvatar}>
-                  <MaterialIcons name="smart-toy" size={20} color={colors.primary} />
+                  <Image source={require('../../assets/logo.png')} style={styles.botAvatarImage} resizeMode="cover" />
                 </View>
                 <View style={[styles.messageBubble, styles.messageBubbleLeft, { padding: 12 }]}>
                   <ActivityIndicator size="small" color={colors.primary} />
@@ -215,6 +240,7 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
             <MaterialIcons name="info" size={14} color={colors['on-surface-variant']} />
             <Text style={styles.disclaimerText}>MedDoc helps you understand your records. It does not replace a doctor.</Text>
           </View>
+        </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -289,10 +315,17 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors['primary-container'],
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors['outline-variant'],
+  },
+  botAvatarImage: {
+    width: 32,
+    height: 32,
   },
   userAvatar: {
     width: 32,
@@ -302,10 +335,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
+    overflow: 'hidden',
   },
   userAvatarText: {
     ...typography.labelMd,
     color: colors['on-primary'],
+  },
+  userAvatarImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   messageBubble: {
     padding: 16,

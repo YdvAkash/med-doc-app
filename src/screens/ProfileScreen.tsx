@@ -145,8 +145,13 @@ export const ProfileScreen = ({ navigation }: any) => {
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
       
       <SafeAreaView style={{ flex: 1 }}>
-
-
+        <View style={styles.appBar}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('HomeTab')}>
+            <MaterialIcons name="arrow-back" size={24} color={colors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.appBarTitle}>Profile</Text>
+          <View style={{ width: 48 }} />
+        </View>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <ScrollView 
             contentContainerStyle={styles.content}
@@ -232,6 +237,13 @@ const styles = StyleSheet.create({
   appBarTitle: {
     ...typography.headlineSm,
     color: colors['on-surface'],
+  },
+  iconButton: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 24,
   },
   editButton: {
     paddingHorizontal: 16,

@@ -49,9 +49,9 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
           style={[styles.logoContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
         >
           <Animated.View style={[styles.logoCircle, { transform: [{ scale: pulse }] }]}>
-            <Image 
-              source={require('../../assets/logo.png')} 
-              style={styles.logoImage} 
+            <Image
+              source={require('../../assets/logo.png')}
+              style={styles.logoImage}
               resizeMode="contain"
             />
           </Animated.View>
