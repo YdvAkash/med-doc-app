@@ -1,0 +1,67 @@
+name: Build and Release APK
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Need full history for push-back
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Prebuild Expo project
+        run: npx expo prebuild --clean
+
+      - name: Build APK
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      - name: Generate Release Tag
+        id: generate_tag
+        run: |
+          echo "TAG_NAME=v$(date +'%Y.%m.%d')-${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          name: Release ${{ env.TAG_NAME }}
+          files: android/app/build/outputs/apk/release/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update README with Latest APK link
+        run: |
+          APK_LINK="https://github.com/${{ github.repository }}/releases/download/${{ env.TAG_NAME }}/app-release.apk"
+          sed -i "s|\[Download Latest APK\].*|[Download Latest APK]($APK_LINK)|" README.md
+
+      - name: Commit and Push README
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: Update latest APK download link in README [skip ci]"
+          file_pattern: "README.md"
