@@ -45,3 +45,4 @@ Download the latest or older versions of the app directly from our automated Git
 
 | Version | Date | Download Link |
 |---------|------|---------------|
+| v2026.08.26-e8e229c | 2026-08-26 | [Download APK](https://github.com/YdvAkash/med-doc-app/releases/download/v2026.08.26-e8e229c/app-release.apk) |
