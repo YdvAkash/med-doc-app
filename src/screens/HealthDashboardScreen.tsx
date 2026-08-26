@@ -10,7 +10,7 @@ type Props = {
 };
 
 export const HealthDashboardScreen: React.FC<Props> = ({ navigation }) => {
-  
+
   const renderHeader = () => (
     <View style={styles.headerSection}>
       <Text style={styles.title}>My Health Journey</Text>
@@ -21,7 +21,7 @@ export const HealthDashboardScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-      
+
 
 
       <View style={styles.content}>

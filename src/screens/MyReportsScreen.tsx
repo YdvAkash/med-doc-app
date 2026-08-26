@@ -5,8 +5,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
 import { getDocuments } from '../services/api';
 import { useIsFocused } from '@react-navigation/native';
-import { DocumentCard } from '../components/DocumentCard';
-
+import { TimelineEvent } from '../components/medical/TimelineEvent';
+import { SkeletonLoader } from '../components/common/SkeletonLoader';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 type Props = {
   navigation: any;
 };
@@ -42,7 +43,7 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-      
+
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Screen Title */}
         <View style={styles.header}>
@@ -52,7 +53,7 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <MaterialIcons name="search" size={24} color={colors.outline} style={styles.searchIcon} />
-          <TextInput 
+          <TextInput
             style={styles.searchInput}
             placeholder="Search by report name or date"
             placeholderTextColor={colors.outline}
@@ -65,9 +66,9 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.chipsWrapper}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsContainer}>
             {chips.map(chip => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={chip}
-                style={[styles.chip, activeChip === chip && styles.chipActive]} 
+                style={[styles.chip, activeChip === chip && styles.chipActive]}
                 activeOpacity={0.8}
                 onPress={() => setActiveChip(chip)}
               >
@@ -80,19 +81,24 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
         {/* Reports List */}
         <View style={styles.listContainer}>
           {loading ? (
-            <ActivityIndicator size="large" color={colors.primary} />
+            <View style={{ gap: 12 }}>
+              <SkeletonLoader height={100} />
+              <SkeletonLoader height={100} />
+              <SkeletonLoader height={100} />
+            </View>
           ) : reports.length === 0 ? (
             <Text style={{ textAlign: 'center', marginTop: 20, color: colors['on-surface-variant'] }}>No reports found.</Text>
           ) : (
-            reports.map((report) => (
-              <DocumentCard 
-                key={report.id}
-                filename={report.originalFilename}
-                date={report.extractedEventDate || report.uploadDate?.split('T')[0]}
-                category={report.category}
-                fileType={report.fileType}
-                onPress={() => navigation.navigate('ReportDetail', { id: report.id })}
-              />
+            reports.map((report, index) => (
+              <TouchableOpacity key={report.id} onPress={() => navigation.navigate('ReportDetail', { id: report.id })} activeOpacity={0.9}>
+                <TimelineEvent
+                  index={index}
+                  title={report.title || report.originalFilename}
+                  description={report.tags?.length > 0 ? report.tags.join(" • ") : (report.category || 'General Medical Report')}
+                  date={report.extractedEventDate || report.uploadDate?.split('T')[0] || 'Unknown Date'}
+                  icon={<MaterialCommunityIcons name="file-document-outline" size={24} color={colors.primary} />}
+                />
+              </TouchableOpacity>
             ))
           )}
         </View>

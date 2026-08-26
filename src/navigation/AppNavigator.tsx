@@ -21,6 +21,8 @@ import { colors } from '../theme';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+import { PremiumTabBar } from '../components/navigation/PremiumTabBar';
+
 const TabIcon = ({ name, focused, color }: { name: any, focused: boolean, color: string }) => {
   return <MaterialIcons name={name} size={24} color={color} />;
 };
@@ -28,59 +30,35 @@ const TabIcon = ({ name, focused, color }: { name: any, focused: boolean, color:
 const MainTabs = () => {
   return (
     <Tab.Navigator
+      tabBar={props => <PremiumTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors['outline-variant'],
-          borderTopWidth: 1,
-          height: 65,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors['on-surface-variant'],
       }}
     >
-      <Tab.Screen 
-        name="HomeTab" 
-        component={HomeScreen} 
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ focused, color }) => <TabIcon name="home" focused={focused} color={color} />
-        }}
+      <Tab.Screen
+        name="HomeTab"
+        component={HomeScreen}
+        options={{ title: 'Home' }}
       />
-      <Tab.Screen 
-        name="ReportsTab" 
-        component={MyReportsScreen} 
-        options={{
-          title: 'Reports',
-          tabBarIcon: ({ focused, color }) => <TabIcon name="description" focused={focused} color={color} />
-        }}
+      <Tab.Screen
+        name="ReportsTab"
+        component={MyReportsScreen}
+        options={{ title: 'Reports' }}
       />
-      <Tab.Screen 
-        name="HealthTab" 
-        component={HealthDashboardScreen} 
-        options={{
-          title: 'Health',
-          tabBarIcon: ({ focused, color }) => <TabIcon name="monitor-heart" focused={focused} color={color} />
-        }}
+      <Tab.Screen
+        name="HealthTab"
+        component={HealthDashboardScreen}
+        options={{ title: 'Health' }}
       />
-      <Tab.Screen 
-        name="AskTab" 
-        component={AskReportsScreen} 
-        options={{
-          title: 'Ask',
-          tabBarIcon: ({ focused, color }) => <TabIcon name="chat" focused={focused} color={color} />
-        }}
+      <Tab.Screen
+        name="AskTab"
+        component={AskReportsScreen}
+        options={{ title: 'Ask' }}
       />
-      <Tab.Screen 
-        name="ProfileTab" 
-        component={ProfileScreen} 
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ focused, color }) => <TabIcon name="person" focused={focused} color={color} />
-        }}
+      <Tab.Screen
+        name="ProfileTab"
+        component={ProfileScreen}
+        options={{ title: 'Profile' }}
       />
     </Tab.Navigator>
   );

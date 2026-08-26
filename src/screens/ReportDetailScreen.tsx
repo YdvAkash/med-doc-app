@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getDocument, deleteDocument } from '../services/api';
 import { colors, typography } from '../theme';
+import { AnimatedButton } from '../components/common/AnimatedButton';
+import { SkeletonLoader } from '../components/common/SkeletonLoader';
 
 type Props = {
   route: any;
@@ -46,7 +48,11 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+        <View style={{ padding: 20, gap: 16, marginTop: 40 }}>
+          <SkeletonLoader height={40} width="60%" />
+          <SkeletonLoader height={120} />
+          <SkeletonLoader height={120} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -71,7 +77,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-      
+
       {/* Custom Header matching Mockup */}
       <View style={styles.customHeader}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIcon}>
@@ -95,7 +101,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
         {/* Important Numbers Section */}
         <Text style={styles.sectionHeading}>Important Numbers</Text>
-        
+
         <View style={styles.metricsList}>
           {displayMetrics.map((metric: any, index: number) => (
             <View key={index} style={styles.metricCard}>
@@ -103,20 +109,20 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 <Text style={styles.metricName}>{metric.name}</Text>
                 <MaterialIcons name={(metric.icon || 'assessment') as any} size={20} color={colors.outline} />
               </View>
-              
+
               <View style={styles.metricValueRow}>
                 <Text style={styles.metricValue}>{metric.value}</Text>
                 <Text style={styles.metricUnit}>{metric.unit}</Text>
               </View>
-              
+
               <View style={[
-                styles.statusPill, 
+                styles.statusPill,
                 metric.status === 'normal' ? styles.statusNormal : styles.statusAttention
               ]}>
-                <MaterialIcons 
-                  name={metric.status === 'normal' ? "check-circle" : "warning"} 
-                  size={14} 
-                  color={metric.status === 'normal' ? colors.primary : colors['on-surface-variant']} 
+                <MaterialIcons
+                  name={metric.status === 'normal' ? "check-circle" : "warning"}
+                  size={14}
+                  color={metric.status === 'normal' ? colors.primary : colors['on-surface-variant']}
                 />
                 <Text style={[
                   styles.statusText,
@@ -132,15 +138,17 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
       {/* Sticky Footer */}
       <View style={styles.stickyFooter}>
-        <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8} onPress={handleDownload}>
-          <MaterialIcons name="file-download" size={20} color={colors['on-primary']} />
-          <Text style={styles.primaryButtonText}>Download PDF</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.8}>
-          <MaterialIcons name="share" size={20} color={colors.primary} />
-          <Text style={styles.secondaryButtonText}>Share</Text>
-        </TouchableOpacity>
+        <AnimatedButton 
+          title="Download PDF" 
+          onPress={handleDownload}
+          style={styles.primaryButton}
+        />
+        <AnimatedButton 
+          title="Share" 
+          onPress={() => {}}
+          style={styles.secondaryButton}
+          textStyle={styles.secondaryButtonText}
+        />
       </View>
     </SafeAreaView>
   );
@@ -165,7 +173,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerTitle: {
-    ...typography.titleLg,
+    ...typography.Title1,
     color: colors.primary,
     fontWeight: '700',
   },
@@ -193,7 +201,7 @@ const styles = StyleSheet.create({
     color: colors['on-surface-variant'],
   },
   sectionHeading: {
-    ...typography.titleMd,
+    ...typography.Title2,
     color: colors['on-surface'],
     fontWeight: '700',
     marginBottom: 16,

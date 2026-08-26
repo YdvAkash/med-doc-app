@@ -19,7 +19,7 @@ export const LoginScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const { login, isLoading, error } = useAuthStore();
 
   const handleLogin = async () => {
@@ -27,7 +27,7 @@ export const LoginScreen = ({ navigation }: any) => {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    
+
     try {
       await login(email, password);
     } catch (err: any) {
@@ -38,12 +38,12 @@ export const LoginScreen = ({ navigation }: any) => {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-      
-      <KeyboardAvoidingView 
+
+      <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -79,14 +79,14 @@ export const LoginScreen = ({ navigation }: any) => {
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
             />
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setShowPassword(!showPassword)}
               style={styles.eyeIcon}
             >
-              <MaterialIcons 
-                name={showPassword ? "visibility" : "visibility-off"} 
-                size={20} 
-                color={colors.outline} 
+              <MaterialIcons
+                name={showPassword ? "visibility" : "visibility-off"}
+                size={20}
+                color={colors.outline}
               />
             </TouchableOpacity>
           </View>
@@ -95,7 +95,7 @@ export const LoginScreen = ({ navigation }: any) => {
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.loginButton}
             onPress={handleLogin}
             disabled={isLoading}

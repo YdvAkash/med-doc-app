@@ -1,24 +1,32 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, Pressable, Animated, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { colors, spacing, typography } from '../theme';
+import { colors, spacing, typography, shadows } from '../theme';
+import { useHaptics } from '../hooks/useHaptics';
 
 interface DocumentCardProps {
   id?: string | number;
   filename: string;
+  title?: string;
+  tags?: string[];
   date: string;
   category?: string;
   fileType?: string;
   onPress: () => void;
 }
 
-export const DocumentCard: React.FC<DocumentCardProps> = ({ 
-  filename, 
-  date, 
-  category, 
-  fileType, 
-  onPress 
+export const DocumentCard: React.FC<DocumentCardProps> = ({
+  filename,
+  title,
+  tags,
+  date,
+  category,
+  fileType,
+  onPress
 }) => {
+  const haptics = useHaptics();
+  const scale = useRef(new Animated.Value(1)).current;
+
   const getIconForType = (type?: string) => {
     switch (type?.toLowerCase()) {
       case 'pdf': return 'picture-as-pdf';
@@ -30,96 +38,143 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
   };
 
   return (
-    <TouchableOpacity
-      style={styles.reportCard}
-      activeOpacity={0.8}
+    <Pressable
+      onPressIn={() => {
+        Animated.spring(scale, { toValue: 0.98, useNativeDriver: true }).start();
+        haptics.light();
+      }}
+      onPressOut={() => {
+        Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
+      }}
       onPress={onPress}
     >
-      <View style={[styles.cardAccent, { backgroundColor: colors.primary }]} />
-      <View style={styles.cardHeader}>
-        <View style={styles.iconWrapper}>
-          <MaterialIcons name={getIconForType(fileType)} size={24} color={colors.primary} />
+      <Animated.View style={[styles.reportCard, { transform: [{ scale }] }]}>
+        <View style={styles.cardHeader}>
+          <View style={styles.iconWrapper}>
+            <MaterialIcons name={getIconForType(fileType)} size={28} color={colors.primary} />
+            <View style={styles.verifiedBadge}>
+              <MaterialIcons name="verified" size={14} color={colors.success} />
+            </View>
+          </View>
+          <View style={styles.cardHeaderText}>
+            <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">
+              {title || filename}
+            </Text>
+            <View style={styles.metaRow}>
+              <MaterialIcons name="event" size={14} color={colors['on-surface-variant']} />
+              <Text style={styles.cardDate}>{date}</Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.cardHeaderText}>
-          <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">{filename}</Text>
-          <Text style={styles.cardDate}>{date}</Text>
+        <View style={styles.cardFooter}>
+          <View style={styles.chipsScrollWrapper}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsContainer}>
+              {category && category.toLowerCase() !== 'general' && (
+                <View style={styles.chip}>
+                  <Text style={styles.cardTags}>{category}</Text>
+                </View>
+              )}
+              {tags && tags.map((tag, idx) => (
+                <View key={idx} style={[styles.chip, { backgroundColor: colors['secondary-container'] }]}>
+                  <Text style={[styles.cardTags, { color: colors['on-secondary-container'] }]}>{tag}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+          <View style={styles.viewAction}>
+            <Text style={styles.viewText}>View</Text>
+            <MaterialIcons name="arrow-forward" size={18} color={colors.primary} />
+          </View>
         </View>
-        <MaterialIcons name="chevron-right" size={24} color={colors['on-surface-variant']} />
-      </View>
-      <View style={styles.cardFooter}>
-        <Text style={styles.cardTags}>{category || 'general'}</Text>
-        <View style={styles.viewAction}>
-          <Text style={styles.viewText}>View</Text>
-          <MaterialIcons name="arrow-forward" size={16} color={colors.primary} />
-        </View>
-      </View>
-    </TouchableOpacity>
+      </Animated.View>
+    </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
   reportCard: {
-    backgroundColor: colors['surface-container-lowest'],
-    borderRadius: 8,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: spacing.stackMd,
+    ...shadows.md,
     borderWidth: 1,
-    borderColor: colors['outline-variant'],
-    padding: spacing.gutter,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    borderColor: colors['surface-variant'],
     marginBottom: 12,
-  },
-  cardAccent: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    bottom: 0,
-    width: 4,
-    backgroundColor: colors.primary,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.gutter,
-    marginBottom: 12,
+    gap: spacing.stackMd,
+    marginBottom: spacing.stackMd,
   },
   iconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors['surface-container-low'],
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  verifiedBadge: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: 2,
   },
   cardHeaderText: {
     flex: 1,
   },
   cardTitle: {
-    ...typography.headlineSm,
+    ...typography.titleMd,
     color: colors['on-surface'],
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    ...typography.bodySm,
+    color: colors['on-surface-variant'],
+    marginBottom: 4,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   cardDate: {
-    ...typography.bodyMd,
-    color: colors['on-surface-variant'],
-    marginTop: 2,
+    ...typography.Caption1,
+    color: colors.textSecondary,
   },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: colors['outline-variant'],
-    paddingTop: 12,
+    marginTop: spacing.stackSm,
+    gap: spacing.stackMd,
+  },
+  chipsScrollWrapper: {
+    flex: 1,
+    marginRight: spacing.stackSm,
+  },
+  chipsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.stackXs,
+  },
+  chip: {
+    backgroundColor: colors.background,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.divider,
   },
   cardTags: {
-    ...typography.labelMd,
-    color: colors.outline,
-    flex: 1,
-    marginRight: 16,
-    textTransform: 'lowercase',
+    ...typography.Caption1,
+    color: colors.textSecondary,
+    textTransform: 'capitalize',
+    letterSpacing: 0.25,
   },
   viewAction: {
     flexDirection: 'row',
@@ -127,7 +182,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   viewText: {
-    ...typography.labelLg,
+    ...typography.Button,
     color: colors.primary,
   },
 });

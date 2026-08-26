@@ -23,14 +23,14 @@ export const TimelineView: React.FC<Props> = ({ ListHeaderComponent }) => {
     try {
       const res = await getTimeline();
       const data = res.data || [];
-      
+
       const grouped = data.reduce((acc: any, item: any) => {
         const dateStr = item.eventDate || item.uploadDate || '';
         if (!dateStr) return acc;
-        
+
         const date = new Date(dateStr);
         const monthYear = date.toLocaleDateString('default', { month: 'long', year: 'numeric' });
-        
+
         if (!acc[monthYear]) {
           acc[monthYear] = [];
         }
@@ -44,7 +44,7 @@ export const TimelineView: React.FC<Props> = ({ ListHeaderComponent }) => {
       }));
 
       sectionsData.sort((a, b) => new Date('01 ' + b.title).getTime() - new Date('01 ' + a.title).getTime());
-      
+
       setSections(sectionsData);
     } catch (err) {
       console.log('Error fetching timeline', err);
@@ -58,7 +58,7 @@ export const TimelineView: React.FC<Props> = ({ ListHeaderComponent }) => {
     const eDate = new Date(eventDate);
     const uDate = new Date(uploadDate);
     const diffTime = Math.abs(uDate.getTime() - eDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays > 7;
   };
 
@@ -107,8 +107,10 @@ export const TimelineView: React.FC<Props> = ({ ListHeaderComponent }) => {
                   <Text style={styles.retroBadgeText}>Retroactive</Text>
                 </View>
               )}
-              <DocumentCard 
-                filename={item.title.replace('Document Uploaded: ', '')}
+              <DocumentCard
+                filename={item.document?.originalFilename || item.title.replace('Document Uploaded: ', '')}
+                title={item.document?.title || item.title.replace('Document Uploaded: ', '')}
+                tags={item.document?.tags || []}
                 date={item.eventDate?.split('T')[0]}
                 category={item.eventType || 'General'}
                 fileType={item.document?.fileType || 'description'}

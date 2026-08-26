@@ -22,7 +22,7 @@ export const RegisterScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const { register, isLoading, error } = useAuthStore();
 
   const handleRegister = async () => {
@@ -30,7 +30,7 @@ export const RegisterScreen = ({ navigation }: any) => {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    
+
     try {
       await register(firstName, lastName, email, password);
     } catch (err: any) {
@@ -41,12 +41,12 @@ export const RegisterScreen = ({ navigation }: any) => {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-      
-      <KeyboardAvoidingView 
+
+      <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -70,7 +70,7 @@ export const RegisterScreen = ({ navigation }: any) => {
                 onChangeText={setFirstName}
               />
             </View>
-            
+
             <View style={styles.inputContainer}>
               <MaterialIcons name="person-outline" size={20} color={colors.outline} style={styles.inputIcon} />
               <TextInput
@@ -105,19 +105,19 @@ export const RegisterScreen = ({ navigation }: any) => {
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
               />
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}
               >
-                <MaterialIcons 
-                  name={showPassword ? "visibility" : "visibility-off"} 
-                  size={20} 
-                  color={colors.outline} 
+                <MaterialIcons
+                  name={showPassword ? "visibility" : "visibility-off"}
+                  size={20}
+                  color={colors.outline}
                 />
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.loginButton}
               onPress={handleRegister}
               disabled={isLoading}
