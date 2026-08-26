@@ -34,6 +34,10 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Update API URL to Production IP
+        run: |
+          sed -i "s|192.168.29.251|${{ secrets.PRODUCTION_IP }}|g" src/services/api.ts
+
       - name: Prebuild Expo project
         run: npx expo prebuild --clean
 
@@ -58,10 +62,11 @@ jobs:
       - name: Update README with Latest APK link
         run: |
           APK_LINK="https://github.com/${{ github.repository }}/releases/download/${{ env.TAG_NAME }}/app-release.apk"
-          sed -i "s|\[Download Latest APK\].*|[Download Latest APK]($APK_LINK)|" README.md
+          DATE=$(date +'%Y-%m-%d')
+          echo "| ${{ env.TAG_NAME }} | $DATE | [Download APK]($APK_LINK) |" >> README.md
 
       - name: Commit and Push README
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "docs: Update latest APK download link in README [skip ci]"
+          commit_message: "docs: Update APK download list in README [skip ci]"
           file_pattern: "README.md"
