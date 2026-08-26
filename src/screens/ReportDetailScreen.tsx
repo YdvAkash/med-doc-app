@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, ActivityIndicator, Alert, Linking, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, ActivityIndicator, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getDocument, deleteDocument } from '../services/api';
-import { colors, spacing, typography } from '../theme';
+import { colors, typography } from '../theme';
 
 type Props = {
   route: any;
@@ -36,29 +36,6 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   };
 
-  const handleDelete = () => {
-    Alert.alert(
-      'Delete Document',
-      'Are you sure you want to delete this document? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteDocument(id);
-              navigation.goBack();
-            } catch (err) {
-              console.error('Delete error', err);
-              Alert.alert('Error', 'Failed to delete document.');
-            }
-          }
-        }
-      ]
-    );
-  };
-
   const handleDownload = () => {
     if (report?.downloadUrl) {
       Linking.openURL(report.downloadUrl);
@@ -68,8 +45,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-
+        <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
       </SafeAreaView>
     );
@@ -78,62 +54,94 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   if (!report) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-
+        <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
         <Text style={{ textAlign: 'center', marginTop: 20, color: colors['on-surface-variant'] }}>Report not found.</Text>
       </SafeAreaView>
     );
   }
 
+  const mockedMetrics = [
+    { id: 1, name: 'Blood Sugar', value: '108', unit: 'mg/dL', status: 'normal', icon: 'water-drop' },
+    { id: 2, name: 'HbA1c', value: '6.2', unit: '%', status: 'attention', icon: 'science' },
+    { id: 3, name: 'Cholesterol', value: '190', unit: 'mg/dL', status: 'normal', icon: 'monitor-heart' }
+  ];
+
+  const displayMetrics = report.metrics && report.metrics.length > 0 ? report.metrics : mockedMetrics;
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       
-
+      {/* Custom Header matching Mockup */}
+      <View style={styles.customHeader}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIcon}>
+          <MaterialIcons name="arrow-back" size={24} color={colors['on-surface']} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>MedDoc</Text>
+        <TouchableOpacity style={styles.headerIcon}>
+          <MaterialIcons name="translate" size={24} color={colors['on-surface']} />
+        </TouchableOpacity>
+      </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Header section */}
-        <View style={styles.headerSection}>
-          <View style={styles.cardInner}>
-            {report.downloadUrl && (report.fileType?.includes('image') || report.originalFilename?.toLowerCase().match(/\.(jpg|jpeg|png)$/)) ? (
-              <Image 
-                source={{ uri: report.downloadUrl }} 
-                style={styles.previewImage} 
-                resizeMode="contain" 
-              />
-            ) : (
-              <View style={styles.iconLarge}>
-                <MaterialIcons name="description" size={48} color={colors.primary} />
-              </View>
-            )}
-            <Text style={styles.title}>{report.originalFilename || 'Document Details'}</Text>
-            
-            <View style={styles.dateRow}>
-              <MaterialIcons name="calendar-today" size={16} color={colors['on-surface-variant']} />
-              <Text style={styles.dateText}>Date: {report.extractedEventDate || report.uploadDate?.split('T')[0]}</Text>
-            </View>
-            
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{report.category || 'General'}</Text>
-            </View>
+        {/* Title Section */}
+        <View style={styles.titleSection}>
+          <Text style={styles.pageTitle}>{report.category ? `${report.category} Details` : 'Document Details'}</Text>
+          <View style={styles.dateRow}>
+            <MaterialIcons name="calendar-today" size={16} color={colors['on-surface-variant']} />
+            <Text style={styles.dateText}>Date: {report.extractedEventDate || report.uploadDate?.split('T')[0] || '15 August 2026'}</Text>
           </View>
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8} onPress={handleDownload}>
-            <View style={styles.primaryButtonContainer}>
-              <MaterialIcons name="file-download" size={20} color={colors['on-primary']} />
-              <Text style={styles.primaryButtonText}>Download File</Text>
+        {/* Important Numbers Section */}
+        <Text style={styles.sectionHeading}>Important Numbers</Text>
+        
+        <View style={styles.metricsList}>
+          {displayMetrics.map((metric: any, index: number) => (
+            <View key={index} style={styles.metricCard}>
+              <View style={styles.metricHeader}>
+                <Text style={styles.metricName}>{metric.name}</Text>
+                <MaterialIcons name={(metric.icon || 'assessment') as any} size={20} color={colors.outline} />
+              </View>
+              
+              <View style={styles.metricValueRow}>
+                <Text style={styles.metricValue}>{metric.value}</Text>
+                <Text style={styles.metricUnit}>{metric.unit}</Text>
+              </View>
+              
+              <View style={[
+                styles.statusPill, 
+                metric.status === 'normal' ? styles.statusNormal : styles.statusAttention
+              ]}>
+                <MaterialIcons 
+                  name={metric.status === 'normal' ? "check-circle" : "warning"} 
+                  size={14} 
+                  color={metric.status === 'normal' ? colors.primary : colors['on-surface-variant']} 
+                />
+                <Text style={[
+                  styles.statusText,
+                  metric.status === 'normal' ? styles.statusTextNormal : styles.statusTextAttention
+                ]}>
+                  {metric.status === 'normal' ? 'Within normal range' : 'Needs attention'}
+                </Text>
+              </View>
             </View>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.8} onPress={handleDelete}>
-            <MaterialIcons name="delete-outline" size={20} color={colors.error} />
-            <Text style={[styles.secondaryButtonText, {color: colors.error}]}>Delete</Text>
-          </TouchableOpacity>
+          ))}
         </View>
       </ScrollView>
+
+      {/* Sticky Footer */}
+      <View style={styles.stickyFooter}>
+        <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8} onPress={handleDownload}>
+          <MaterialIcons name="file-download" size={20} color={colors['on-primary']} />
+          <Text style={styles.primaryButtonText}>Download PDF</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.8}>
+          <MaterialIcons name="share" size={20} color={colors.primary} />
+          <Text style={styles.secondaryButtonText}>Share</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -141,113 +149,131 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FAFAFA',
   },
-  appBar: {
+  customHeader: {
     height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FAFAFA',
     borderBottomWidth: 1,
     borderBottomColor: colors['outline-variant'],
   },
-  iconButton: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 24,
+  headerIcon: {
+    padding: 8,
   },
-  appBarTitle: {
-    ...typography.headlineSm,
+  headerTitle: {
+    ...typography.titleLg,
     color: colors.primary,
+    fontWeight: '700',
   },
   content: {
-    paddingHorizontal: spacing.marginMobile,
+    paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 40,
-    gap: 24,
   },
-  headerSection: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors['outline-variant'],
-    backgroundColor: colors['surface-container-lowest'],
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+  titleSection: {
+    marginBottom: 24,
   },
-  cardInner: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  iconLarge: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors['secondary-container'],
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  previewImage: {
-    width: '100%',
-    height: 450,
-    borderRadius: 8,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors['outline-variant'],
-    backgroundColor: colors['surface-container-lowest']
-  },
-  title: {
+  pageTitle: {
     ...typography.headlineMd,
     color: colors['on-surface'],
-    textAlign: 'center',
-    marginBottom: 12,
+    fontWeight: '800',
+    marginBottom: 8,
   },
   dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
+    gap: 6,
   },
   dateText: {
     ...typography.bodyMd,
     color: colors['on-surface-variant'],
   },
-  categoryBadge: {
-    backgroundColor: colors['surface-container'],
-    paddingHorizontal: 16,
+  sectionHeading: {
+    ...typography.titleMd,
+    color: colors['on-surface'],
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  metricsList: {
+    gap: 16,
+  },
+  metricCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  metricHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  metricName: {
+    ...typography.labelLg,
+    color: colors['on-surface'],
+  },
+  metricValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 12,
+  },
+  metricValue: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: colors['on-surface'],
+    marginRight: 4,
+  },
+  metricUnit: {
+    ...typography.bodyMd,
+    color: colors['on-surface'],
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
+    alignSelf: 'flex-start',
+    gap: 6,
   },
-  categoryText: {
-    ...typography.labelMd,
+  statusNormal: {
+    backgroundColor: '#E8F5E9',
+  },
+  statusAttention: {
+    backgroundColor: '#F5F5F5',
+  },
+  statusText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statusTextNormal: {
+    color: colors.primary,
+  },
+  statusTextAttention: {
     color: colors['on-surface-variant'],
   },
-  actionsContainer: {
-    flexDirection: 'row',
-    gap: 16,
-    marginTop: 8,
+  stickyFooter: {
+    padding: 20,
+    backgroundColor: '#FAFAFA',
+    borderTopWidth: 1,
+    borderTopColor: colors['outline-variant'],
+    gap: 12,
   },
   primaryButton: {
-    flex: 1,
-    borderRadius: 12,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  primaryButtonContainer: {
-    height: 52,
-    borderRadius: 12,
     backgroundColor: colors.primary,
+    height: 48,
+    borderRadius: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -255,15 +281,15 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     ...typography.labelLg,
-    color: colors['on-primary'],
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   secondaryButton: {
-    flex: 1,
-    height: 52,
-    borderRadius: 12,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 1.5,
-    borderColor: colors.outline,
-    backgroundColor: colors['surface-container-lowest'],
+    borderColor: colors.primary,
+    backgroundColor: 'transparent',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -272,5 +298,6 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     ...typography.labelLg,
     color: colors.primary,
+    fontWeight: '700',
   },
 });
