@@ -7,11 +7,11 @@ import {
   Dimensions,
   TouchableOpacity,
   StatusBar,
-  Image,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, typography } from '../theme';
+import { colors } from '../theme';
 import { MedivaLogo } from '../components/common/MedivaLogo';
+import { WelcomeBackground } from '../components/common/WelcomeBackground';
 
 const { height } = Dimensions.get('window');
 
@@ -34,15 +34,16 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
 
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.08, duration: 2000, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 2000, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1.06, duration: 2500, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 2500, useNativeDriver: true }),
       ])
     ).start();
   }, []);
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <WelcomeBackground />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
 
       <View style={styles.content}>
         {/* Logo & Branding */}
@@ -50,7 +51,7 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
           style={[styles.logoContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
         >
           <Animated.View style={[styles.logoCircle, { transform: [{ scale: pulse }] }]}>
-            <MedivaLogo width={80} height={80} color={colors.primary} />
+            <MedivaLogo width={100} height={100} color={colors.primary} />
           </Animated.View>
         </Animated.View>
 
@@ -100,106 +101,114 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#ffffff', // Fallback
   },
   content: {
     flex: 1,
     paddingHorizontal: 28,
-    paddingTop: 80,
-    paddingBottom: 48,
+    paddingTop: height * 0.12, // Dynamic padding to fill screen better
+    paddingBottom: height * 0.08,
     justifyContent: 'space-between',
   },
   logoContainer: {
     alignItems: 'center',
+    marginBottom: 20,
   },
   logoCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 30,
+    width: 140,
+    height: 140,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
+    shadowRadius: 25,
+    elevation: 12,
     backgroundColor: colors.surface,
-  },
-  logoImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 30,
   },
   titleArea: {
     alignItems: 'flex-start',
+    marginTop: 10,
+    marginBottom: 10,
   },
   appName: {
-    fontSize: 52,
+    fontSize: 56,
     fontWeight: '900',
     color: colors['on-background'],
     letterSpacing: 1.5,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   tagline: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '300',
     color: colors['on-surface-variant'],
-    lineHeight: 36,
+    lineHeight: 40,
   },
   taglineHighlight: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '700',
     color: colors.primary,
-    lineHeight: 36,
+    lineHeight: 40,
   },
   pillsRow: {
     flexDirection: 'row',
-    gap: 10,
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 20,
+    marginBottom: 30,
   },
   pill: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: colors['secondary-container'],
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.8)', // Slightly transparent over the animated bg
     borderWidth: 1,
-    borderColor: colors['outline-variant'],
+    borderColor: 'rgba(15, 108, 191, 0.2)', // Light primary border
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   pillText: {
     color: colors.primary,
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
   },
   buttonArea: {
-    gap: 14,
+    gap: 16,
   },
   primaryBtn: {
-    height: 60,
-    borderRadius: 18,
+    height: 64,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.primary,
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
   },
   primaryBtnText: {
     color: colors['on-primary'],
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   secondaryBtn: {
-    height: 60,
-    borderRadius: 18,
+    height: 64,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: colors.outline,
-    backgroundColor: colors.surface,
+    borderColor: 'rgba(15, 108, 191, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
   },
   secondaryBtnText: {
     color: colors.primary,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
   },
 });
