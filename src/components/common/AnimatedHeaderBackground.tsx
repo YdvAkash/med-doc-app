@@ -10,7 +10,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import { colors } from '../../theme';
-import { Activity, Heart, Stethoscope, Cross, Pill } from 'lucide-react-native';
+import { Activity, Heart, Stethoscope, Plus, Pill } from 'lucide-react-native';
 
 const FloatingIcon = ({ icon: Icon, delay, startX, startY, endY, scale, opacity }: any) => {
   const translateY = useSharedValue(startY);
@@ -126,11 +126,11 @@ export const AnimatedHeaderBackground = () => {
       <FloatingIcon icon={Stethoscope} delay={0} startX="5%" startY={180} endY={-80} scale={0.8} opacity={0.3} />
       <FloatingIcon icon={Heart} delay={2000} startX="20%" startY={180} endY={-80} scale={0.7} opacity={0.35} />
       <FloatingIcon icon={Activity} delay={1000} startX="45%" startY={180} endY={-80} scale={1} opacity={0.25} />
-      <FloatingIcon icon={Cross} delay={3000} startX="65%" startY={180} endY={-80} scale={0.9} opacity={0.3} />
+      <FloatingIcon icon={Plus} delay={3000} startX="65%" startY={180} endY={-80} scale={0.9} opacity={0.3} />
       <FloatingIcon icon={Pill} delay={1500} startX="85%" startY={180} endY={-80} scale={0.8} opacity={0.4} />
       <FloatingIcon icon={Heart} delay={4500} startX="15%" startY={180} endY={-80} scale={0.5} opacity={0.2} />
       <FloatingIcon icon={Stethoscope} delay={3500} startX="55%" startY={180} endY={-80} scale={0.6} opacity={0.3} />
-      <FloatingIcon icon={Cross} delay={5000} startX="75%" startY={180} endY={-80} scale={0.6} opacity={0.3} />
+      <FloatingIcon icon={Plus} delay={5000} startX="75%" startY={180} endY={-80} scale={0.6} opacity={0.3} />
       <FloatingIcon icon={Activity} delay={6000} startX="35%" startY={180} endY={-80} scale={0.7} opacity={0.3} />
       <FloatingIcon icon={Pill} delay={7000} startX="95%" startY={180} endY={-80} scale={0.5} opacity={0.4} />
 
