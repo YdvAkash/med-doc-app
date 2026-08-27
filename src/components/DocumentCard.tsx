@@ -128,12 +128,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardTitle: {
-    ...typography.titleMd,
+    ...typography.labelLg,
     color: colors['on-surface'],
     marginBottom: 4,
   },
   cardSubtitle: {
-    ...typography.bodySm,
+    ...typography.bodyMd,
     color: colors['on-surface-variant'],
     marginBottom: 4,
   },
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   chipsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.stackXs,
+    gap: spacing.xs,
   },
   chip: {
     backgroundColor: colors.background,

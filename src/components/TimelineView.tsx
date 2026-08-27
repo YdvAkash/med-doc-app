@@ -5,6 +5,8 @@ import { colors, spacing, typography } from '../theme';
 import { getTimeline } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { DocumentCard } from './DocumentCard';
+import EmptyState from './EmptyState';
+import { Activity } from 'lucide-react-native';
 
 interface Props {
   ListHeaderComponent?: React.ReactElement | null;
@@ -75,7 +77,13 @@ export const TimelineView: React.FC<Props> = ({ ListHeaderComponent }) => {
     return (
       <View style={{ flex: 1 }}>
         {ListHeaderComponent}
-        <Text style={styles.emptyText}>No timeline events found.</Text>
+        <EmptyState 
+          title="No Timeline Events" 
+          description="Your medical timeline is currently empty. Upload reports to see them here."
+          icon={Activity}
+          actionLabel="Add First Event"
+          onAction={() => navigation.navigate('AddReport')}
+        />
       </View>
     );
   }

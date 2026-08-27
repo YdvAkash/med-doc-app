@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Image, StatusBar } from 'react-native';
 import { colors, typography } from '../theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { forgotPassword, resetPassword } from '../services/api';
 import { getUserFriendlyErrorMessage } from '../utils/errorHandler';
+import { OTPModal } from '../components/common/OTPModal';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { PremiumTextInput } from '../components/common/PremiumTextInput';
+import { MedicalBackground } from '../components/common/MedicalBackground';
+import { AnimatedAuthHeading } from '../components/common/AnimatedAuthHeading';
+import { MedivaLogo } from '../components/common/MedivaLogo';
 
 export const ForgotPasswordScreen = ({ navigation }: any) => {
   const [step, setStep] = useState<'email' | 'otp' | 'password'>('email');
@@ -25,8 +31,9 @@ export const ForgotPasswordScreen = ({ navigation }: any) => {
     }
   };
 
-  const handleVerifyOtp = () => {
-    if (!otp) return Alert.alert('Error', 'Please enter OTP');
+  const handleVerifyOtp = (otpCode: string) => {
+    if (!otpCode) return Alert.alert('Error', 'Please enter OTP');
+    setOtp(otpCode);
     setStep('password');
   };
 
@@ -45,67 +52,82 @@ export const ForgotPasswordScreen = ({ navigation }: any) => {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TouchableOpacity style={styles.backButton} onPress={() => step === 'email' ? navigation.goBack() : setStep(step === 'password' ? 'otp' : 'email')}>
-        <MaterialIcons name="arrow-back" size={24} color={colors['on-surface']} />
-      </TouchableOpacity>
-      
-      <View style={styles.content}>
-        <Text style={styles.title}>
-          {step === 'email' ? 'Forgot Password' : step === 'otp' ? 'Enter OTP' : 'New Password'}
-        </Text>
-        <Text style={styles.subtitle}>
-          {step === 'email' ? 'Enter your email to receive a reset OTP' : step === 'otp' ? `We sent an OTP to ${email}` : 'Create a new password'}
-        </Text>
+    <View style={styles.root}>
+      <MedicalBackground />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
-        {step === 'email' && (
-          <View style={styles.inputContainer}>
-            <MaterialIcons name="email" size={20} color={colors.outline} style={styles.icon} />
-            <TextInput style={styles.input} placeholder="Email Address" value={email} onChangeText={setEmail} autoCapitalize="none" />
-          </View>
-        )}
-
-        {step === 'otp' && (
-          <View style={styles.inputContainer}>
-            <MaterialIcons name="lock-clock" size={20} color={colors.outline} style={styles.icon} />
-            <TextInput style={styles.input} placeholder="Enter 6-digit code" placeholderTextColor={colors.outline} value={otp} onChangeText={setOtp} keyboardType="number-pad" maxLength={6} />
-          </View>
-        )}
-
-        {step === 'password' && (
-          <View style={styles.inputContainer}>
-            <MaterialIcons name="lock" size={20} color={colors.outline} style={styles.icon} />
-            <TextInput style={styles.input} placeholder="New Password" value={newPassword} onChangeText={setNewPassword} secureTextEntry />
-          </View>
-        )}
-
-        <TouchableOpacity 
-          style={styles.button} 
-          onPress={step === 'email' ? handleSendOtp : step === 'otp' ? handleVerifyOtp : handleResetPassword}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors['on-primary']} />
-          ) : (
-            <Text style={styles.buttonText}>
-              {step === 'email' ? 'Send OTP' : step === 'otp' ? 'Verify OTP' : 'Reset Password'}
-            </Text>
-          )}
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <TouchableOpacity style={styles.backButton} onPress={() => step === 'email' ? navigation.goBack() : setStep(step === 'password' ? 'otp' : 'email')}>
+          <MaterialIcons name="arrow-back" size={24} color={colors['on-surface']} />
         </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+
+        <View style={styles.content}>
+          <View style={styles.logoContainer}>
+            <MedivaLogo width={72} height={72} color={colors.primary} />
+          </View>
+
+          <AnimatedAuthHeading
+            title={step === 'password' ? 'New Password' : 'Forgot Password'}
+            subtitle={step === 'password' ? 'Create a new password' : 'Enter your email to receive a reset OTP'}
+          />
+
+          <View>
+            {(step === 'email' || step === 'otp') && (
+              <PremiumTextInput
+                icon="email"
+                placeholder="Email Address"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={{ marginBottom: 24 }}
+              />
+            )}
+
+            {step === 'password' && (
+              <PremiumTextInput
+                icon="lock"
+                placeholder="New Password"
+                value={newPassword}
+                onChangeText={setNewPassword}
+                isPassword={true}
+                style={{ marginBottom: 24 }}
+              />
+            )}
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={step === 'email' || step === 'otp' ? handleSendOtp : handleResetPassword}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors['on-primary']} />
+              ) : (
+                <Text style={styles.buttonText}>
+                  {step === 'password' ? 'Reset Password' : 'Send OTP'}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <OTPModal
+          visible={step === 'otp'}
+          email={email}
+          onVerify={handleVerifyOtp}
+          onCancel={() => setStep('email')}
+        />
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, padding: 24, paddingTop: 60 },
-  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors['outline-variant'], marginBottom: 40 },
+  root: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1, padding: 24, paddingTop: 60 },
+  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors['outline-variant'], marginBottom: 24, zIndex: 10 },
+  logoContainer: { alignSelf: 'center', marginBottom: 24, width: 72, height: 72 },
   content: { flex: 1, justifyContent: 'center', paddingBottom: 100 },
-  title: { ...typography.headlineLg, color: colors['on-background'], marginBottom: 8 },
-  subtitle: { ...typography.bodyLg, color: colors['on-surface-variant'], marginBottom: 32 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors['outline-variant'], height: 60, paddingHorizontal: 16, marginBottom: 24 },
-  icon: { marginRight: 12 },
-  input: { flex: 1, ...typography.bodyLg, color: colors['on-surface'] },
-  button: { height: 60, backgroundColor: colors.primary, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  button: { height: 60, backgroundColor: colors.primary, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   buttonText: { ...typography.labelLg, color: colors['on-primary'], fontSize: 18 }
 });

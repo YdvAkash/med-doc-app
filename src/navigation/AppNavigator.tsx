@@ -65,6 +65,8 @@ const MainTabs = () => {
   );
 };
 
+import { LoginSuccessOverlay } from '../components/common/LoginSuccessOverlay';
+
 export const AppNavigator = () => {
   const { token, isInitialized, checkAuth } = useAuthStore();
 
@@ -81,26 +83,29 @@ export const AppNavigator = () => {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-        {token == null ? (
-          // Auth Stack
-          <>
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-          </>
-        ) : (
-          // App Stack
-          <>
-            <Stack.Screen name="MainTabs" component={MainTabs} />
-            <Stack.Screen name="AddReport" component={AddReportScreen} />
-            <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
-            <Stack.Screen name="Documents" component={DocumentsScreen} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+          {token == null ? (
+            // Auth Stack
+            <>
+              <Stack.Screen name="Welcome" component={WelcomeScreen} />
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+              <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            </>
+          ) : (
+            // App Stack
+            <>
+              <Stack.Screen name="MainTabs" component={MainTabs} />
+              <Stack.Screen name="AddReport" component={AddReportScreen} />
+              <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
+              <Stack.Screen name="Documents" component={DocumentsScreen} />
+            </>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+      <LoginSuccessOverlay />
+    </>
   );
 };

@@ -20,6 +20,12 @@ import { DocumentCard } from '../components/DocumentCard';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { AnimatedButton } from '../components/common/AnimatedButton';
 import { LinearGradient } from 'expo-linear-gradient';
+import EmptyState from '../components/EmptyState';
+import { FileSearch } from 'lucide-react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedHeaderBackground } from '../components/common/AnimatedHeaderBackground';
+import { MedivaLogo } from '../components/common/MedivaLogo';
+
 type Props = {
   navigation: NativeStackNavigationProp<any>;
 };
@@ -68,101 +74,106 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
         <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.greeting}>Hello, {firstName}</Text>
-            <Text style={styles.subtitle}>Your health records are safe here.</Text>
+          {/* Header */}
+          <Animated.View style={styles.header} entering={FadeInDown.duration(600).springify()}>
+            <AnimatedHeaderBackground />
+            <View style={styles.headerTextContainer}>
+              <View style={styles.brandRow}>
+                <MedivaLogo width={16} height={16} color={colors.primary} />
+                <Text style={styles.brandTextSmall}>Mediva</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.greeting}>Hello, {firstName}</Text>
+              </View>
+              <Text style={styles.subtitle}>Your health records are safe here.</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.avatar}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('ProfileTab')}
+            >
+              {profile?.profilePictureUrl ? (
+                <Image source={{ uri: profile.profilePictureUrl }} style={{ width: '100%', height: '100%' }} />
+              ) : (
+                <MaterialIcons name="person" size={28} color={colors.primary} />
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Primary Action Button */}
+          <AnimatedButton
+            title="Add Medical Report"
+            onPress={() => navigation.navigate('AddReport')}
+            style={styles.primaryButton}
+          />
+
+          {/* Quick Actions Grid */}
+          <View style={styles.grid}>
+            {/* Take Photo */}
+            <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('AddReport')}>
+              <MaterialIcons name="photo-camera" size={36} color={colors.primary} style={{ marginBottom: 12 }} />
+              <Text style={styles.gridItemText}>Take Photo</Text>
+            </TouchableOpacity>
+
+            {/* Choose Report */}
+            <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('AddReport')}>
+              <MaterialIcons name="folder" size={36} color={colors.primary} style={{ marginBottom: 12 }} />
+              <Text style={styles.gridItemText}>Choose Report</Text>
+            </TouchableOpacity>
+
+            {/* Ask About Reports */}
+            <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('AskTab')}>
+              <MaterialIcons name="chat-bubble-outline" size={36} color={colors.primary} style={{ marginBottom: 12 }} />
+              <Text style={styles.gridItemText}>Ask About Reports</Text>
+            </TouchableOpacity>
+
+            {/* View Health */}
+            <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('HealthTab')}>
+              <MaterialIcons name="monitor-heart" size={36} color={colors.primary} style={{ marginBottom: 12 }} />
+              <Text style={styles.gridItemText}>View Health</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.avatar}
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate('ProfileTab')}
-          >
-            {profile?.profilePictureUrl ? (
-              <Image source={{ uri: profile.profilePictureUrl }} style={{ width: '100%', height: '100%' }} />
-            ) : (
-              <MaterialIcons name="person" size={28} color={colors.surface} />
-            )}
-          </TouchableOpacity>
-        </View>
 
-        {/* Primary Action Button */}
-        <AnimatedButton 
-          title="Add Medical Report" 
-          onPress={() => navigation.navigate('AddReport')}
-          style={styles.primaryButton}
-        />
+          {/* Recent Reports Section */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Reports</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('ReportsTab')}>
+              <Text style={styles.seeAllText}>See All</Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* Quick Actions Grid */}
-        <View style={styles.grid}>
-          {/* Take Photo */}
-          <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('AddReport')}>
-            <View style={styles.iconCircle}>
-              <MaterialIcons name="photo-camera" size={28} color={colors.primary} />
-            </View>
-            <Text style={styles.gridItemText}>Take Photo</Text>
-          </TouchableOpacity>
-
-          {/* Choose Report */}
-          <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('AddReport')}>
-            <View style={styles.iconCircle}>
-              <MaterialIcons name="folder" size={28} color={colors.primary} />
-            </View>
-            <Text style={styles.gridItemText}>Choose Report</Text>
-          </TouchableOpacity>
-
-          {/* Ask About Reports */}
-          <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('AskTab')}>
-            <View style={styles.iconCircle}>
-              <MaterialIcons name="chat-bubble-outline" size={28} color={colors.primary} />
-            </View>
-            <Text style={styles.gridItemText}>Ask About Reports</Text>
-          </TouchableOpacity>
-
-          {/* View Health */}
-          <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('HealthTab')}>
-            <View style={styles.iconCircle}>
-              <MaterialIcons name="monitor-heart" size={28} color={colors.primary} />
-            </View>
-            <Text style={styles.gridItemText}>View Health</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Recent Reports Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Reports</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('ReportsTab')}>
-            <Text style={styles.seeAllText}>See All</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.recentList}>
-          {loading ? (
-            <View style={{ gap: 12 }}>
-              <SkeletonLoader height={100} />
-              <SkeletonLoader height={100} />
-              <SkeletonLoader height={100} />
-            </View>
-          ) : recentReports.length === 0 ? (
-            <Text style={styles.emptyText}>No recent reports found.</Text>
-          ) : (
-            recentReports.map(report => (
-              <DocumentCard
-                key={report.id}
-                filename={report.originalFilename}
-                title={report.title}
-                tags={report.tags}
-                date={report.extractedEventDate || report.uploadDate?.split('T')[0]}
-                category={report.category}
-                fileType={report.fileType}
-                onPress={() => navigation.navigate('ReportDetail', { id: report.id })}
+          <View style={styles.recentList}>
+            {loading ? (
+              <View style={{ gap: 12 }}>
+                <SkeletonLoader height={100} />
+                <SkeletonLoader height={100} />
+                <SkeletonLoader height={100} />
+              </View>
+            ) : recentReports.length === 0 ? (
+              <EmptyState
+                title="No Recent Reports"
+                description="You haven't uploaded any medical reports recently."
+                icon={FileSearch}
+                actionLabel="Upload Report"
+                onAction={() => navigation.navigate('AddReport')}
               />
-            ))
-          )}
-        </View>
+            ) : (
+              recentReports.map(report => (
+                <DocumentCard
+                  key={report.id}
+                  filename={report.originalFilename}
+                  title={report.title}
+                  tags={report.tags}
+                  date={report.extractedEventDate || report.uploadDate?.split('T')[0]}
+                  category={report.category}
+                  fileType={report.fileType}
+                  onPress={() => navigation.navigate('ReportDetail', { id: report.id })}
+                />
+              ))
+            )}
+          </View>
 
-      </ScrollView>
+        </ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -175,36 +186,69 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.marginMobile,
-    paddingBottom: 40,
+    paddingBottom: 120, // Increased to account for the floating bottom tab bar
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 24,
+    padding: 16,
+    borderRadius: 20,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
   },
   headerTextContainer: {
     flex: 1,
     marginRight: 16,
   },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    backgroundColor: colors.primary + '15',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  brandTextSmall: {
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 11,
+    marginLeft: 4,
+    letterSpacing: 0.5,
+  },
   greeting: {
     ...typography.headlineMd,
     color: colors['on-background'],
     fontWeight: '800',
-    marginBottom: 4,
+    letterSpacing: -0.5,
   },
   subtitle: {
     ...typography.bodyMd,
     color: colors['on-surface-variant'],
+    marginTop: 4,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.outline,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.primary + '10',
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
   },
   primaryButton: {
     backgroundColor: colors.primary,
@@ -246,19 +290,11 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors['secondary-container'],
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
   gridItemText: {
-    ...typography.labelMd,
+    ...typography.labelLg,
     color: colors['on-surface'],
     textAlign: 'center',
+    fontWeight: '600',
   },
   sectionHeader: {
     flexDirection: 'row',

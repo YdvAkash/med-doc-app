@@ -8,6 +8,8 @@ import { useIsFocused } from '@react-navigation/native';
 import { TimelineEvent } from '../components/medical/TimelineEvent';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import EmptyState from '../components/EmptyState';
+import { Files } from 'lucide-react-native';
 type Props = {
   navigation: any;
 };
@@ -87,7 +89,13 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
               <SkeletonLoader height={100} />
             </View>
           ) : reports.length === 0 ? (
-            <Text style={{ textAlign: 'center', marginTop: 20, color: colors['on-surface-variant'] }}>No reports found.</Text>
+            <EmptyState 
+              title="No Reports Found" 
+              description="We couldn't find any medical reports matching your filters."
+              icon={Files}
+              actionLabel="Add Report"
+              onAction={() => navigation.navigate('AddReport')}
+            />
           ) : (
             reports.map((report, index) => (
               <TouchableOpacity key={report.id} onPress={() => navigation.navigate('ReportDetail', { id: report.id })} activeOpacity={0.9}>
@@ -116,7 +124,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.marginMobile,
     paddingTop: spacing.stackLg,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
   header: {
     marginBottom: spacing.stackLg,

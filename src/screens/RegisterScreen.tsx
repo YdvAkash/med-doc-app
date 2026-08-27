@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
@@ -11,24 +10,28 @@ import {
   Alert,
   StatusBar,
   ScrollView,
-  Modal
+  Image
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useAuthStore } from '../store/useAuth';
 import { colors, typography } from '../theme';
 import { verifyRegistration } from '../services/api';
 import { getUserFriendlyErrorMessage } from '../utils/errorHandler';
+import { OTPModal } from '../components/common/OTPModal';
+import { PremiumTextInput } from '../components/common/PremiumTextInput';
+import { MedicalBackground } from '../components/common/MedicalBackground';
+import { AnimatedAuthHeading } from '../components/common/AnimatedAuthHeading';
+import { MedivaLogo } from '../components/common/MedivaLogo';
 
 export const RegisterScreen = ({ navigation }: any) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otp, setOtp] = useState('');
 
-  const { register, login, isLoading, error } = useAuthStore();
+  const { register, login, isLoading } = useAuthStore();
 
   const handleRegister = async () => {
     if (!firstName || !lastName || !email || !password) {
@@ -44,12 +47,11 @@ export const RegisterScreen = ({ navigation }: any) => {
     }
   };
 
-  const handleVerifyOtp = async () => {
-    if (!otp) return Alert.alert('Error', 'Please enter OTP');
+  const handleVerifyOtp = async (otpCode: string) => {
+    if (!otpCode) return Alert.alert('Error', 'Please enter OTP');
     try {
-      await verifyRegistration(email, otp);
+      await verifyRegistration(email, otpCode);
       setShowOtpModal(false);
-      // Automatically login after successful verification
       await login(email, password);
     } catch (err: any) {
       Alert.alert('Verification Failed', getUserFriendlyErrorMessage(err));
@@ -58,7 +60,8 @@ export const RegisterScreen = ({ navigation }: any) => {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <MedicalBackground />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
       <KeyboardAvoidingView
         style={styles.container}
@@ -72,68 +75,46 @@ export const RegisterScreen = ({ navigation }: any) => {
         </TouchableOpacity>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join us to manage your health records</Text>
+          <View style={styles.logoContainer}>
+            <MedivaLogo width={72} height={72} color={colors.primary} />
           </View>
 
+          <AnimatedAuthHeading
+            title="Create Account"
+            subtitle="Join us to manage your health records"
+          />
+
           <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <MaterialIcons name="person" size={20} color={colors.outline} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="First Name"
-                placeholderTextColor={colors.outline}
-                value={firstName}
-                onChangeText={setFirstName}
-              />
-            </View>
+            <PremiumTextInput
+              icon="person"
+              placeholder="First Name"
+              value={firstName}
+              onChangeText={setFirstName}
+            />
 
-            <View style={styles.inputContainer}>
-              <MaterialIcons name="person-outline" size={20} color={colors.outline} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Last Name"
-                placeholderTextColor={colors.outline}
-                value={lastName}
-                onChangeText={setLastName}
-              />
-            </View>
+            <PremiumTextInput
+              icon="person-outline"
+              placeholder="Last Name"
+              value={lastName}
+              onChangeText={setLastName}
+            />
 
-            <View style={styles.inputContainer}>
-              <MaterialIcons name="email" size={20} color={colors.outline} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Email Address"
-                placeholderTextColor={colors.outline}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
+            <PremiumTextInput
+              icon="email"
+              placeholder="Email Address"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
 
-            <View style={styles.inputContainer}>
-              <MaterialIcons name="lock" size={20} color={colors.outline} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor={colors.outline}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-              >
-                <MaterialIcons
-                  name={showPassword ? "visibility" : "visibility-off"}
-                  size={20}
-                  color={colors.outline}
-                />
-              </TouchableOpacity>
-            </View>
+            <PremiumTextInput
+              icon="lock"
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              isPassword={true}
+            />
 
             <TouchableOpacity
               style={styles.loginButton}
@@ -158,35 +139,12 @@ export const RegisterScreen = ({ navigation }: any) => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* OTP Modal */}
-      <Modal visible={showOtpModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Verify Email</Text>
-            <Text style={styles.modalSubtitle}>We've sent an OTP to {email}</Text>
-            
-            <TextInput
-              style={styles.otpInput}
-              placeholder="Enter 6-digit code"
-              placeholderTextColor={colors.outline}
-              keyboardType="number-pad"
-              maxLength={6}
-              value={otp}
-              onChangeText={setOtp}
-              textAlign="center"
-            />
-            
-            <TouchableOpacity style={styles.verifyButton} onPress={handleVerifyOtp}>
-              <Text style={styles.verifyButtonText}>Verify & Login</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.cancelButton} onPress={() => setShowOtpModal(false)}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
+      <OTPModal
+        visible={showOtpModal}
+        email={email}
+        onVerify={handleVerifyOtp}
+        onCancel={() => setShowOtpModal(false)}
+      />
     </View>
   );
 };
@@ -194,20 +152,19 @@ export const RegisterScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
     padding: 24,
-    justifyContent: 'center',
-    paddingTop: 100,
+    paddingTop: 120,
+    paddingBottom: 40,
   },
   backButton: {
     position: 'absolute',
-    top: 60,
+    top: Platform.OS === 'ios' ? 60 : 40,
     left: 24,
     width: 40,
     height: 40,
@@ -219,20 +176,15 @@ const styles = StyleSheet.create({
     borderColor: colors['outline-variant'],
     zIndex: 10,
   },
-  header: {
-    marginBottom: 40,
-  },
-  title: {
-    ...typography.headlineLg,
-    color: colors['on-background'],
-    marginBottom: 8,
-  },
-  subtitle: {
-    ...typography.bodyLg,
-    color: colors['on-surface-variant'],
+  logoContainer: {
+    alignSelf: 'center',
+    marginBottom: 24,
+    width: 72,
+    height: 72,
   },
   form: {
     gap: 16,
+    marginTop: 16,
   },
   inputContainer: {
     flexDirection: 'row',
