@@ -24,6 +24,15 @@ api.interceptors.request.use(
   }
 );
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // If the error response is 401 (Unauthorized), we could dispatch a logout event
+    // For now, we simply pass it through for the UI / store to handle.
+    return Promise.reject(error);
+  }
+);
+
 export const uploadDocument = async (fileUri: string, mimeType: string, fileName: string, onUploadProgress?: (progressEvent: any) => void) => {
   const formData = new FormData();
   formData.append('file', {
@@ -91,6 +100,21 @@ export const loginUser = async (data: any) => {
 
 export const registerUser = async (data: any) => {
   const response = await api.post('/auth/register', data);
+  return response.data;
+};
+
+export const verifyRegistration = async (email: string, otp: string) => {
+  const response = await api.post('/auth/verify-registration', { email, otp });
+  return response.data;
+};
+
+export const forgotPassword = async (email: string) => {
+  const response = await api.post('/auth/forgot-password', { email });
+  return response.data;
+};
+
+export const resetPassword = async (email: string, otp: string, newPassword: string) => {
+  const response = await api.post('/auth/reset-password', { email, otp, newPassword });
   return response.data;
 };
 

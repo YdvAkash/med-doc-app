@@ -17,6 +17,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useAuthStore } from '../store/useAuth';
 import { getProfile, updateProfile, uploadProfilePicture } from '../services/api';
 import { colors, typography, spacing } from '../theme';
@@ -38,6 +39,7 @@ export const ProfileScreen = ({ navigation }: any) => {
   });
 
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -126,13 +128,21 @@ export const ProfileScreen = ({ navigation }: any) => {
       <View style={styles.fieldContent}>
         <Text style={styles.fieldLabel}>{label}</Text>
         {isEditing && editable ? (
-          <TextInput
-            style={styles.fieldInput}
-            value={formData[key]}
-            onChangeText={(text) => setFormData({ ...formData, [key]: text })}
-            placeholderTextColor={colors.outline}
-            placeholder={`Enter ${label}`}
-          />
+          key === 'dateOfBirth' ? (
+            <TouchableOpacity activeOpacity={0.8} onPress={() => setDatePickerVisibility(true)}>
+              <Text style={[styles.fieldInput, { color: formData[key] ? colors['on-surface'] : colors.outline }]}>
+                {formData[key] || 'Select Date'}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <TextInput
+              style={styles.fieldInput}
+              value={formData[key]}
+              onChangeText={(text) => setFormData({ ...formData, [key]: text })}
+              placeholderTextColor={colors.outline}
+              placeholder={`Enter ${label}`}
+            />
+          )
         ) : (
           <Text style={styles.fieldValue}>{formData[key] || 'Not provided'}</Text>
         )}
@@ -202,7 +212,6 @@ export const ProfileScreen = ({ navigation }: any) => {
           </ScrollView>
         </KeyboardAvoidingView>
         
-        {/* Floating Action Button for Edit/Save */}
         <TouchableOpacity 
           style={styles.fab} 
           onPress={() => isEditing ? handleSave() : setIsEditing(true)}
@@ -210,6 +219,18 @@ export const ProfileScreen = ({ navigation }: any) => {
         >
           <MaterialIcons name={isEditing ? "check" : "edit"} size={24} color={colors['on-primary']} />
         </TouchableOpacity>
+
+        <DateTimePickerModal
+          isVisible={isDatePickerVisible}
+          mode="date"
+          date={formData.dateOfBirth ? new Date(formData.dateOfBirth) : new Date()}
+          onConfirm={(date) => {
+            setDatePickerVisibility(false);
+            const formatted = date.toISOString().split('T')[0];
+            setFormData({ ...formData, dateOfBirth: formatted });
+          }}
+          onCancel={() => setDatePickerVisibility(false)}
+        />
         
       </SafeAreaView>
     </View>

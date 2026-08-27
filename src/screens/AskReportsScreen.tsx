@@ -24,7 +24,7 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
-  
+
   const { user } = useAuthStore();
   const initials = (user?.name || user?.email || 'U').slice(0, 2).toUpperCase();
   const defaultUserAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=4D96FF&color=fff&size=128`;
@@ -66,18 +66,18 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleSend = async () => {
     if (!inputText.trim()) return;
-    
+
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       messageType: 'user_question',
       content: inputText.trim(),
     };
-    
+
     setMessages(prev => [...prev, userMsg]);
     const question = inputText.trim();
     setInputText('');
     setIsTyping(true);
-    
+
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
@@ -96,7 +96,7 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
       }, 100);
     }
   };
-  
+
   const handleSuggestion = (text: string) => {
     setInputText(text);
   };
@@ -104,7 +104,7 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-      
+
       <View style={styles.appBar}>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('HomeTab')}>
           <MaterialIcons name="arrow-back" size={24} color={colors.textPrimary} />
@@ -113,136 +113,136 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
         <View style={{ width: 48 }} />
       </View>
 
-      <KeyboardAvoidingView 
-        style={styles.keyboardView} 
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <View style={{ flex: 1 }}>
-          <ScrollView 
+          <ScrollView
             ref={scrollViewRef}
-            contentContainerStyle={styles.content} 
+            contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
             onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           >
-          {/* Header Section */}
-          <View style={styles.headerSection}>
-            <Text style={styles.title}>Ask Your Reports</Text>
-            <Text style={styles.subtitle}>Ask simple questions about your reports.</Text>
-          </View>
-
-          {/* Chat History */}
-          <View style={styles.chatHistory}>
-            {/* AI Welcome Message */}
-            <View style={[styles.messageRow, styles.messageRowLeft]}>
-              <View style={styles.botAvatar}>
-                <Image source={require('../../assets/logo.png')} style={styles.botAvatarImage} resizeMode="cover" />
-              </View>
-              <View style={[styles.messageBubble, styles.messageBubbleLeft]}>
-                <Markdown style={markdownStyles}>
-                  Hello! I'm here to help you understand your medical records. What would you like to know?
-                </Markdown>
-                
-                {messages.length === 0 && (
-                  <>
-                    <Text style={styles.suggestedTitle}>SUGGESTED QUESTIONS:</Text>
-                    <View style={styles.suggestedChips}>
-                      <TouchableOpacity style={styles.chip} onPress={() => handleSuggestion("What was my blood sugar last year?")}>
-                        <Text style={styles.chipText}>"What was my blood sugar last year?"</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.chip} onPress={() => handleSuggestion("Explain my latest blood test.")}>
-                        <Text style={styles.chipText}>"Explain my latest blood test."</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.chip} onPress={() => handleSuggestion("What was my latest HbA1c?")}>
-                        <Text style={styles.chipText}>"What was my latest HbA1c?"</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                )}
-              </View>
+            {/* Header Section */}
+            <View style={styles.headerSection}>
+              <Text style={styles.title}>Ask Your Reports</Text>
+              <Text style={styles.subtitle}>Ask simple questions about your reports.</Text>
             </View>
 
-            {isLoading && messages.length === 0 ? (
-              <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
-            ) : (
-              messages.map((msg) => {
-                const isUser = msg.messageType === 'user_question';
-                
-                return (
-                  <View key={msg.id} style={[styles.messageRow, isUser ? styles.messageRowRight : styles.messageRowLeft]}>
-                    {!isUser && (
-                      <View style={styles.botAvatar}>
-                        <Image source={require('../../assets/logo.png')} style={styles.botAvatarImage} resizeMode="cover" />
-                      </View>
-                    )}
-                    
-                    <View style={[styles.messageBubble, isUser ? styles.messageBubbleRight : styles.messageBubbleLeft]}>
-                      {isUser ? (
-                        <Text style={styles.messageTextRight}>
-                          {msg.content}
-                        </Text>
-                      ) : (
-                        <Markdown style={markdownStyles}>
-                          {msg.content}
-                        </Markdown>
-                      )}
-                    </View>
-                    
-                    {isUser && (
-                      <View style={styles.userAvatar}>
-                        <Image source={{ uri: profileImage || defaultUserAvatar }} style={styles.userAvatarImage} />
-                      </View>
-                    )}
-                  </View>
-                );
-              })
-            )}
-            
-            {isTyping && (
+            {/* Chat History */}
+            <View style={styles.chatHistory}>
+              {/* AI Welcome Message */}
               <View style={[styles.messageRow, styles.messageRowLeft]}>
-                 <View style={styles.botAvatar}>
+                <View style={styles.botAvatar}>
                   <Image source={require('../../assets/logo.png')} style={styles.botAvatarImage} resizeMode="cover" />
                 </View>
-                <View style={[styles.messageBubble, styles.messageBubbleLeft, { padding: 12 }]}>
-                  <ActivityIndicator size="small" color={colors.primary} />
+                <View style={[styles.messageBubble, styles.messageBubbleLeft]}>
+                  <Markdown style={markdownStyles}>
+                    Hello! I'm here to help you understand your medical records. What would you like to know?
+                  </Markdown>
+
+                  {messages.length === 0 && (
+                    <>
+                      <Text style={styles.suggestedTitle}>SUGGESTED QUESTIONS:</Text>
+                      <View style={styles.suggestedChips}>
+                        <TouchableOpacity style={styles.chip} onPress={() => handleSuggestion("What was my blood sugar last year?")}>
+                          <Text style={styles.chipText}>"What was my blood sugar last year?"</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.chip} onPress={() => handleSuggestion("Explain my latest blood test.")}>
+                          <Text style={styles.chipText}>"Explain my latest blood test."</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.chip} onPress={() => handleSuggestion("What was my latest HbA1c?")}>
+                          <Text style={styles.chipText}>"What was my latest HbA1c?"</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  )}
                 </View>
               </View>
-            )}
-          </View>
-        </ScrollView>
 
-        {/* Input Area */}
-        <View style={styles.inputArea}>
-          <View style={styles.inputContainer}>
-            <TouchableOpacity style={styles.micButton}>
-              <MaterialIcons name="mic" size={24} color={colors['on-surface-variant']} />
-            </TouchableOpacity>
-            
-            <TextInput 
-              style={styles.textInput}
-              placeholder="Ask about your reports..."
-              placeholderTextColor={colors['on-surface-variant']}
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-            />
-            
-            <TouchableOpacity style={styles.sendButton} onPress={handleSend} disabled={isTyping || !inputText.trim()}>
-              <View style={[styles.sendButtonContainer, (!inputText.trim() || isTyping) && { backgroundColor: colors['surface-container-highest'] }]}>
-                <MaterialIcons name="send" size={18} color={(!inputText.trim() || isTyping) ? colors['on-surface-variant'] : colors['on-primary']} />
-              </View>
-            </TouchableOpacity>
+              {isLoading && messages.length === 0 ? (
+                <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+              ) : (
+                messages.map((msg) => {
+                  const isUser = msg.messageType === 'user_question';
+
+                  return (
+                    <View key={msg.id} style={[styles.messageRow, isUser ? styles.messageRowRight : styles.messageRowLeft]}>
+                      {!isUser && (
+                        <View style={styles.botAvatar}>
+                          <Image source={require('../../assets/logo.png')} style={styles.botAvatarImage} resizeMode="cover" />
+                        </View>
+                      )}
+
+                      <View style={[styles.messageBubble, isUser ? styles.messageBubbleRight : styles.messageBubbleLeft]}>
+                        {isUser ? (
+                          <Text style={styles.messageTextRight}>
+                            {msg.content}
+                          </Text>
+                        ) : (
+                          <Markdown style={markdownStyles}>
+                            {msg.content}
+                          </Markdown>
+                        )}
+                      </View>
+
+                      {isUser && (
+                        <View style={styles.userAvatar}>
+                          <Image source={{ uri: profileImage || defaultUserAvatar }} style={styles.userAvatarImage} />
+                        </View>
+                      )}
+                    </View>
+                  );
+                })
+              )}
+
+              {isTyping && (
+                <View style={[styles.messageRow, styles.messageRowLeft]}>
+                  <View style={styles.botAvatar}>
+                    <Image source={require('../../assets/logo.png')} style={styles.botAvatarImage} resizeMode="cover" />
+                  </View>
+                  <View style={[styles.messageBubble, styles.messageBubbleLeft, { padding: 12 }]}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  </View>
+                </View>
+              )}
+            </View>
+          </ScrollView>
+
+          {/* Input Area */}
+          <View style={styles.inputArea}>
+            <View style={styles.inputContainer}>
+              <TouchableOpacity style={styles.micButton}>
+                <MaterialIcons name="mic" size={24} color={colors['on-surface-variant']} />
+              </TouchableOpacity>
+
+              <TextInput
+                style={styles.textInput}
+                placeholder="Ask about your reports..."
+                placeholderTextColor={colors['on-surface-variant']}
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+              />
+
+              <TouchableOpacity style={styles.sendButton} onPress={handleSend} disabled={isTyping || !inputText.trim()}>
+                <View style={[styles.sendButtonContainer, (!inputText.trim() || isTyping) && { backgroundColor: colors['surface-container-highest'] }]}>
+                  <MaterialIcons name="send" size={18} color={(!inputText.trim() || isTyping) ? colors['on-surface-variant'] : colors['on-primary']} />
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
-          
-          <View style={styles.disclaimerContainer}>
-            <MaterialIcons name="info" size={14} color={colors['on-surface-variant']} />
-            <Text style={styles.disclaimerText}>MedDoc helps you understand your records. It does not replace a doctor.</Text>
-          </View>
-        </View>
         </View>
       </KeyboardAvoidingView>
+
+      <View style={[styles.disclaimerContainer, { backgroundColor: colors.surface, paddingBottom: Platform.OS === 'ios' ? 24 : 16, paddingTop: 8 }]}>
+        <MaterialIcons name="info" size={14} color={colors['on-surface-variant']} />
+        <Text style={styles.disclaimerText}>MedDoc helps you understand your records. It does not replace a doctor.</Text>
+      </View>
     </SafeAreaView>
   );
 };
@@ -435,7 +435,8 @@ const styles = StyleSheet.create({
     color: colors['on-primary-container'],
   },
   inputArea: {
-    padding: spacing.marginMobile,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors['outline-variant'],
@@ -448,7 +449,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors['outline-variant'],
     padding: 4,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   micButton: {
     width: 44,
@@ -459,11 +460,11 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 40,
     maxHeight: 100,
     paddingHorizontal: 8,
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingTop: 10,
+    paddingBottom: 10,
     ...typography.bodyMd,
     color: colors['on-surface'],
   },
