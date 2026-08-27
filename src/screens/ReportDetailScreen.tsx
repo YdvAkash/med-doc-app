@@ -83,7 +83,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIcon}>
           <MaterialIcons name="arrow-back" size={24} color={colors['on-surface']} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>MedDoc</Text>
+        <Text style={styles.headerTitle}>Mediva</Text>
         <TouchableOpacity style={styles.headerIcon}>
           <MaterialIcons name="translate" size={24} color={colors['on-surface']} />
         </TouchableOpacity>
@@ -138,14 +138,14 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
       {/* Sticky Footer */}
       <View style={styles.stickyFooter}>
-        <AnimatedButton 
-          title="Download PDF" 
+        <AnimatedButton
+          title="Download PDF"
           onPress={handleDownload}
           style={styles.primaryButton}
         />
-        <AnimatedButton 
-          title="Share" 
-          onPress={() => {}}
+        <AnimatedButton
+          title="Share"
+          onPress={() => { }}
           style={styles.secondaryButton}
           textStyle={styles.secondaryButtonText}
         />

@@ -11,7 +11,7 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarPr
   const haptics = useHaptics();
 
   const currentRouteName = state.routes[state.index].name;
-  
+
   // Hide tab bar on specific screens
   if (currentRouteName === 'AskTab' || currentRouteName === 'ProfileTab') {
     return null;
@@ -26,8 +26,8 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarPr
             options.tabBarLabel !== undefined
               ? options.tabBarLabel
               : options.title !== undefined
-              ? options.title
-              : route.name;
+                ? options.title
+                : route.name;
 
           const isFocused = state.index === index;
 
@@ -95,11 +95,11 @@ const TabItem = ({ isFocused, onPress, onLongPress, iconName, label }: any) => {
       <Animated.View style={[styles.tabContent, { transform: [{ scale }] }]}>
         {/* Top Active Indicator */}
         {isFocused && <View style={styles.activeIndicator} />}
-        
-        <MaterialIcons 
-          name={iconName} 
-          size={24} 
-          color={isFocused ? colors.primary : colors.textSecondary} 
+
+        <MaterialIcons
+          name={iconName}
+          size={24}
+          color={isFocused ? colors.primary : colors.textSecondary}
         />
         <Text style={[styles.label, { color: isFocused ? colors.primary : colors.textSecondary }]}>
           {label}

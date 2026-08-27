@@ -10,22 +10,27 @@ import {
   ActivityIndicator,
   Alert,
   StatusBar,
-  Modal
+  Image
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useAuthStore } from '../store/useAuth';
 import { colors, typography } from '../theme';
 import { verifyRegistration } from '../services/api';
 import { getUserFriendlyErrorMessage } from '../utils/errorHandler';
+import { OTPModal } from '../components/common/OTPModal';
+import { MedicalBackground } from '../components/common/MedicalBackground';
+import { AnimatedAuthHeading } from '../components/common/AnimatedAuthHeading';
+import { PremiumTextInput } from '../components/common/PremiumTextInput';
+import { MedivaLogo } from '../components/common/MedivaLogo';
 
 export const LoginScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otp, setOtp] = useState('');
 
-  const { login, isLoading, error } = useAuthStore();
+  const { login, isLoading } = useAuthStore();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -38,7 +43,7 @@ export const LoginScreen = ({ navigation }: any) => {
     } catch (err: any) {
       const code = err.response?.data?.code;
       const errorMessage = getUserFriendlyErrorMessage(err);
-      
+
       if (code === 'UNVERIFIED_ACCOUNT' || errorMessage.includes('not verified')) {
         Alert.alert('Verify Email', errorMessage);
         setShowOtpModal(true);
@@ -48,12 +53,11 @@ export const LoginScreen = ({ navigation }: any) => {
     }
   };
 
-  const handleVerifyOtp = async () => {
-    if (!otp) return Alert.alert('Error', 'Please enter OTP');
+  const handleVerifyOtp = async (otpCode: string) => {
+    if (!otpCode) return Alert.alert('Error', 'Please enter OTP');
     try {
-      await verifyRegistration(email, otp);
+      await verifyRegistration(email, otpCode);
       setShowOtpModal(false);
-      // Automatically login after successful verification
       await login(email, password);
     } catch (err: any) {
       Alert.alert('Verification Failed', getUserFriendlyErrorMessage(err));
@@ -62,7 +66,9 @@ export const LoginScreen = ({ navigation }: any) => {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+
+      <MedicalBackground />
 
       <KeyboardAvoidingView
         style={styles.container}
@@ -75,46 +81,32 @@ export const LoginScreen = ({ navigation }: any) => {
           <MaterialIcons name="arrow-back" size={24} color={colors['on-surface']} />
         </TouchableOpacity>
 
-        <View style={styles.header}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to access your medical records</Text>
+        <View style={styles.logoContainer}>
+          <MedivaLogo width={72} height={72} color={colors.primary} />
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <MaterialIcons name="email" size={20} color={colors.outline} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email Address"
-              placeholderTextColor={colors.outline}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
+        <AnimatedAuthHeading
+          title="Welcome Back"
+          subtitle="Sign in to access your medical records"
+        />
 
-          <View style={styles.inputContainer}>
-            <MaterialIcons name="lock" size={20} color={colors.outline} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor={colors.outline}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-            />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              style={styles.eyeIcon}
-            >
-              <MaterialIcons
-                name={showPassword ? "visibility" : "visibility-off"}
-                size={20}
-                color={colors.outline}
-              />
-            </TouchableOpacity>
-          </View>
+        <View style={styles.form}>
+          <PremiumTextInput
+            icon="email"
+            placeholder="Email Address"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+
+          <PremiumTextInput
+            icon="lock"
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            isPassword={true}
+          />
 
           <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('ForgotPassword')}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
@@ -134,42 +126,20 @@ export const LoginScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.footerLink}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-
-      {/* OTP Modal */}
-      <Modal visible={showOtpModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Verify Email</Text>
-            <Text style={styles.modalSubtitle}>We've sent an OTP to {email}</Text>
-            
-            <TextInput
-              style={styles.otpInput}
-              placeholder="Enter 6-digit code"
-              placeholderTextColor={colors.outline}
-              keyboardType="number-pad"
-              maxLength={6}
-              value={otp}
-              onChangeText={setOtp}
-              textAlign="center"
-            />
-            
-            <TouchableOpacity style={styles.verifyButton} onPress={handleVerifyOtp}>
-              <Text style={styles.verifyButtonText}>Verify & Login</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.cancelButton} onPress={() => setShowOtpModal(false)}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Don't have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.footerLink}>Sign Up</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
+      </KeyboardAvoidingView>
+
+      <OTPModal
+        visible={showOtpModal}
+        email={email}
+        onVerify={handleVerifyOtp}
+        onCancel={() => setShowOtpModal(false)}
+      />
     </View>
   );
 };
@@ -177,17 +147,14 @@ export const LoginScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
     padding: 24,
-    justifyContent: 'center',
+    paddingTop: 60,
   },
   backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 24,
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -196,23 +163,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors['outline-variant'],
+    marginBottom: 24,
     zIndex: 10,
   },
-  header: {
-    marginBottom: 40,
-    marginTop: 60,
-  },
-  title: {
-    ...typography.headlineLg,
-    color: colors['on-background'],
-    marginBottom: 8,
-  },
-  subtitle: {
-    ...typography.bodyLg,
-    color: colors['on-surface-variant'],
+  logoContainer: {
+    alignSelf: 'center',
+    marginBottom: 24,
+    width: 72,
+    height: 72,
   },
   form: {
     gap: 16,
+    marginTop: 32,
   },
   inputContainer: {
     flexDirection: 'row',

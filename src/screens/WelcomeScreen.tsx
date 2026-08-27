@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, typography } from '../theme';
+import { MedivaLogo } from '../components/common/MedivaLogo';
 
 const { height } = Dimensions.get('window');
 
@@ -49,11 +50,7 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
           style={[styles.logoContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
         >
           <Animated.View style={[styles.logoCircle, { transform: [{ scale: pulse }] }]}>
-            <Image
-              source={require('../../assets/logo.png')}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
+            <MedivaLogo width={80} height={80} color={colors.primary} />
           </Animated.View>
         </Animated.View>
 
@@ -61,7 +58,7 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
         <Animated.View
           style={[styles.titleArea, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
         >
-          <Text style={styles.appName}>MedDoc</Text>
+          <Text style={styles.appName}>Mediva</Text>
           <Text style={styles.tagline}>Your complete medical history,</Text>
           <Text style={styles.taglineHighlight}>beautifully organized.</Text>
         </Animated.View>

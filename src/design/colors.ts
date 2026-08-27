@@ -1,7 +1,7 @@
 export const PREMIUM_COLORS = {
   // PRIMARY PALETTE (Medical Blue Trust)
   primary: '#0F6CBF',
-  primaryLight: '#E8F1FB',
+  primaryLight: '#a8caf5ff',
   primaryDark: '#0A4A8F',
   accent: '#00BCD4',
   

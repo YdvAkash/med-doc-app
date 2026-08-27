@@ -241,7 +241,7 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
 
       <View style={[styles.disclaimerContainer, { backgroundColor: colors.surface, paddingBottom: Platform.OS === 'ios' ? 24 : 16, paddingTop: 8 }]}>
         <MaterialIcons name="info" size={14} color={colors['on-surface-variant']} />
-        <Text style={styles.disclaimerText}>MedDoc helps you understand your records. It does not replace a doctor.</Text>
+        <Text style={styles.disclaimerText}>Mediva helps you understand your records. It does not replace a doctor.</Text>
       </View>
     </SafeAreaView>
   );
