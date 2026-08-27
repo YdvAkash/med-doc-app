@@ -126,11 +126,40 @@ export const LoginScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.footerLink}>Sign Up</Text>
-          </TouchableOpacity>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <Text style={styles.footerLink}>Sign Up</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+
+      {/* OTP Modal */}
+      <Modal visible={showOtpModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Verify Email</Text>
+            <Text style={styles.modalSubtitle}>We've sent an OTP to {email}</Text>
+            
+            <TextInput
+              style={styles.otpInput}
+              placeholder="Enter 6-digit code"
+              placeholderTextColor={colors.outline}
+              keyboardType="number-pad"
+              maxLength={6}
+              value={otp}
+              onChangeText={setOtp}
+              textAlign="center"
+            />
+            
+            <TouchableOpacity style={styles.verifyButton} onPress={handleVerifyOtp}>
+              <Text style={styles.verifyButtonText}>Verify & Login</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setShowOtpModal(false)}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
 
