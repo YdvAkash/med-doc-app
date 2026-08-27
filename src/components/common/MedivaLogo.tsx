@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, { Path, Circle, Defs, LinearGradient, Stop, G } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 interface MedivaLogoProps {
   width?: number;
@@ -13,18 +13,26 @@ export const MedivaLogo: React.FC<MedivaLogoProps> = ({
   color = '#0aa8c6' 
 }) => {
   return (
-    <Svg width={width} height={height} viewBox="0 0 112 112" fill="none">
-      <Defs>
-        <LinearGradient id="medivaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <Stop offset="0%" stopColor={color} stopOpacity="1" />
-          <Stop offset="100%" stopColor="#0056b3" stopOpacity="0.8" />
-        </LinearGradient>
-      </Defs>
-      <Circle cx="56" cy="56" r="50" fill="url(#medivaGrad)" opacity={0.15} />
-      <Circle cx="56" cy="56" r="40" fill="url(#medivaGrad)" opacity={0.25} />
+    <Svg width={width} height={height} viewBox="0 0 160 160" fill="none">
       <Path
-        d="M62 38H50V50H38V62H50V74H62V62H74V50H62V38Z"
-        fill="url(#medivaGrad)"
+        d="M 42 32 L 80 55 L 118 32 L 118 86 M 42 32 L 42 125 Q 42 130 47 130 L 92 130"
+        fill="none"
+        stroke={color}
+        strokeWidth={11}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M 42 32 L 80 55 L 118 32"
+        fill="none"
+        stroke={color}
+        strokeWidth={11}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M 89 78 H 101 V 90 H 113 V 102 H 101 V 114 H 89 V 102 H 77 V 90 H 89 Z"
+        fill={color}
       />
     </Svg>
   );
