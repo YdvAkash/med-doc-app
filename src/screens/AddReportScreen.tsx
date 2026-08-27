@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Clipboard from 'expo-clipboard';
 import { uploadDocument, getDocument, getDocumentText, confirmDate } from '../services/api';
 import { colors, spacing, typography } from '../theme';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 type Props = {
   navigation: any;
@@ -22,6 +23,7 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
   const [dateCandidates, setDateCandidates] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [manualDate, setManualDate] = useState<string>('');
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
   const handleDocumentSelection = async () => {
     try {
@@ -117,6 +119,9 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
       setDateCandidates(res.data.dateCandidates || []);
       if (res.data.dateCandidates && res.data.dateCandidates.length > 0) {
         setSelectedDate(res.data.dateCandidates[0].date);
+      } else {
+        const today = new Date().toISOString().split('T')[0];
+        setManualDate(today);
       }
       setUploadState('confirm_date');
     } catch (err) {
@@ -268,14 +273,26 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
 
             <View style={styles.manualDateContainer}>
               <Text style={styles.label}>Manual Date Entry (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.dateInput}
-                placeholder="e.g. 2026-08-15"
-                placeholderTextColor={colors.outline}
-                value={manualDate}
-                onChangeText={(text) => { setManualDate(text); setSelectedDate(''); }}
-              />
+              <TouchableOpacity activeOpacity={0.8} onPress={() => { setDatePickerVisibility(true); setSelectedDate(''); }}>
+                <View style={[styles.dateInput, { justifyContent: 'center' }]}>
+                  <Text style={{ color: manualDate ? colors['on-surface'] : colors.outline, ...typography.bodyLg }}>
+                    {manualDate || 'Select Date'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
             </View>
+
+            <DateTimePickerModal
+              isVisible={isDatePickerVisible}
+              mode="date"
+              onConfirm={(date) => {
+                setDatePickerVisibility(false);
+                const formatted = date.toISOString().split('T')[0];
+                setManualDate(formatted);
+                setSelectedDate('');
+              }}
+              onCancel={() => setDatePickerVisibility(false)}
+            />
 
             <TouchableOpacity style={styles.primaryButton} onPress={handleConfirmDate} activeOpacity={0.8}>
               <View style={styles.primaryButtonContainer}>

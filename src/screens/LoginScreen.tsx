@@ -9,16 +9,21 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
-  StatusBar
+  StatusBar,
+  Modal
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/useAuth';
 import { colors, typography } from '../theme';
+import { verifyRegistration } from '../services/api';
+import { getUserFriendlyErrorMessage } from '../utils/errorHandler';
 
 export const LoginScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState('');
 
   const { login, isLoading, error } = useAuthStore();
 
@@ -31,7 +36,27 @@ export const LoginScreen = ({ navigation }: any) => {
     try {
       await login(email, password);
     } catch (err: any) {
-      Alert.alert('Login Failed', err.message || 'Invalid credentials');
+      const code = err.response?.data?.code;
+      const errorMessage = getUserFriendlyErrorMessage(err);
+      
+      if (code === 'UNVERIFIED_ACCOUNT' || errorMessage.includes('not verified')) {
+        Alert.alert('Verify Email', errorMessage);
+        setShowOtpModal(true);
+      } else {
+        Alert.alert('Login Failed', errorMessage);
+      }
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp) return Alert.alert('Error', 'Please enter OTP');
+    try {
+      await verifyRegistration(email, otp);
+      setShowOtpModal(false);
+      // Automatically login after successful verification
+      await login(email, password);
+    } catch (err: any) {
+      Alert.alert('Verification Failed', getUserFriendlyErrorMessage(err));
     }
   };
 
@@ -91,7 +116,7 @@ export const LoginScreen = ({ navigation }: any) => {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.forgotPassword}>
+          <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('ForgotPassword')}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
@@ -109,13 +134,42 @@ export const LoginScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.footerLink}>Sign Up</Text>
-          </TouchableOpacity>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <Text style={styles.footerLink}>Sign Up</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+
+      {/* OTP Modal */}
+      <Modal visible={showOtpModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Verify Email</Text>
+            <Text style={styles.modalSubtitle}>We've sent an OTP to {email}</Text>
+            
+            <TextInput
+              style={styles.otpInput}
+              placeholder="Enter 6-digit code"
+              placeholderTextColor={colors.outline}
+              keyboardType="number-pad"
+              maxLength={6}
+              value={otp}
+              onChangeText={setOtp}
+              textAlign="center"
+            />
+            
+            <TouchableOpacity style={styles.verifyButton} onPress={handleVerifyOtp}>
+              <Text style={styles.verifyButtonText}>Verify & Login</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setShowOtpModal(false)}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 };
@@ -219,5 +273,62 @@ const styles = StyleSheet.create({
   footerLink: {
     ...typography.labelLg,
     color: colors.primary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    ...typography.headlineSm,
+    color: colors['on-surface'],
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    ...typography.bodyMd,
+    color: colors['on-surface-variant'],
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  otpInput: {
+    width: '100%',
+    height: 60,
+    backgroundColor: colors.background,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors['outline-variant'],
+    ...typography.headlineSm,
+    marginBottom: 24,
+  },
+  verifyButton: {
+    width: '100%',
+    height: 50,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  verifyButtonText: {
+    ...typography.labelLg,
+    color: colors['on-primary'],
+  },
+  cancelButton: {
+    width: '100%',
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    ...typography.labelLg,
+    color: colors['on-surface-variant'],
   },
 });
