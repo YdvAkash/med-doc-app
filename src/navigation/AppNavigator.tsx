@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { WelcomeScreen } from '../screens/WelcomeScreen';
+import { MedivaSplashScreen } from '../screens/MedivaSplashScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
 import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
@@ -69,17 +70,19 @@ import { LoginSuccessOverlay } from '../components/common/LoginSuccessOverlay';
 
 export const AppNavigator = () => {
   const { token, isInitialized, checkAuth } = useAuthStore();
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
 
   useEffect(() => {
     checkAuth();
+    const timer = setTimeout(() => {
+      setIsSplashVisible(false);
+    }, 3500); // 3.5 seconds to let the HTML animation finish
+    
+    return () => clearTimeout(timer);
   }, []);
 
-  if (!isInitialized) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+  if (!isInitialized || isSplashVisible) {
+    return <MedivaSplashScreen />;
   }
 
   return (

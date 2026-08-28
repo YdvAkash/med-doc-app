@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, ActivityIndicator, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, ActivityIndicator, Alert, Linking, Share, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getDocument, deleteDocument } from '../services/api';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown, FadeIn, FadeOut } from 'react-native-reanimated';
+import * as FileSystem from 'expo-file-system/legacy';
+import { getDocument, deleteDocument, generateDocumentSummary, translateDocument } from '../services/api';
 import { colors, typography } from '../theme';
 import { AnimatedButton } from '../components/common/AnimatedButton';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
@@ -16,6 +19,10 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { id } = route.params || {};
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [showLangModal, setShowLangModal] = useState(false);
+  const [translateLoading, setTranslateLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -38,9 +45,119 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   };
 
-  const handleDownload = () => {
-    if (report?.downloadUrl) {
-      Linking.openURL(report.downloadUrl);
+  const handleGenerateSummary = async () => {
+    if (!id) return;
+    setSummaryLoading(true);
+    try {
+      const res = await generateDocumentSummary(id);
+      if (res.success && res.data) {
+        setReport((prev: any) => ({ ...prev, summary: res.data }));
+      } else {
+        Alert.alert('Error', 'Could not generate summary.');
+      }
+    } catch (err) {
+      console.error('Error generating summary:', err);
+      Alert.alert('Error', 'Failed to generate summary.');
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!report?.downloadUrl) {
+      Alert.alert('Download Unavailable', 'There is no download link available for this report.');
+      return;
+    }
+    
+    setDownloading(true);
+    try {
+      const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+      
+      if (permissions.granted) {
+        const fileUri = report.downloadUrl;
+        const fileName = report.title ? `${report.title.replace(/\s+/g, '_')}.pdf` : 'Medical_Report.pdf';
+        
+        // Download to app's cache directory first
+        const downloadResult = await FileSystem.downloadAsync(
+          fileUri,
+          FileSystem.cacheDirectory + fileName
+        );
+        
+        // Save to the selected directory
+        const base64 = await FileSystem.readAsStringAsync(downloadResult.uri, { encoding: FileSystem.EncodingType.Base64 });
+        const newFileUri = await FileSystem.StorageAccessFramework.createFileAsync(
+          permissions.directoryUri,
+          fileName,
+          'application/pdf'
+        );
+        await FileSystem.writeAsStringAsync(newFileUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+        
+        Alert.alert('Success', 'PDF downloaded to your device successfully!');
+      } else {
+        Alert.alert('Permission Denied', 'Please grant folder permissions to save the file.');
+      }
+    } catch (e) {
+      console.error('Download error:', e);
+      Alert.alert('Download Failed', 'An error occurred while downloading the file.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleTranslate = async (lang: string) => {
+    if (!id) return;
+    setShowLangModal(false);
+    setTranslateLoading(true);
+    try {
+      const res = await translateDocument(id, lang);
+      if (res.success && res.data) {
+        setReport(res.data);
+      } else {
+        Alert.alert('Error', 'Translation failed.');
+      }
+    } catch (err) {
+      console.error('Error translating:', err);
+      Alert.alert('Error', 'Failed to translate document.');
+    } finally {
+      setTranslateLoading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const reportName = report?.title || report?.originalFilename || report?.category || 'Medical Report';
+      const doctorName = report?.doctorName || 'Dr. Sharma';
+      const labName = report?.labName || 'Himani Imaging & Diagnostics';
+      
+      let finalUrl = '';
+      if (report?.downloadUrl) {
+        try {
+          const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(report.downloadUrl)}`);
+          if (res.ok) {
+            finalUrl = await res.text();
+          } else {
+            finalUrl = report.downloadUrl;
+          }
+        } catch(e) {
+          finalUrl = report.downloadUrl;
+        }
+      }
+
+      const shareMessage = [
+        `📄 Report: ${reportName}`,
+        `👨‍⚕️ Referred By: ${doctorName}`,
+        `🏥 Pathology/Lab: ${labName}`,
+        finalUrl ? `\n🔗 View Document: ${finalUrl}` : ''
+      ].filter(Boolean).join('\n');
+        
+      await Share.share({
+        message: shareMessage,
+        title: reportName,
+        url: finalUrl
+      });
+    } catch (error) {
+      console.error('Share error:', error);
+      Alert.alert('Error', 'Failed to share the document.');
     }
   };
 
@@ -84,72 +201,179 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           <MaterialIcons name="arrow-back" size={24} color={colors['on-surface']} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mediva</Text>
-        <TouchableOpacity style={styles.headerIcon}>
+        <TouchableOpacity style={styles.headerIcon} onPress={() => setShowLangModal(true)}>
           <MaterialIcons name="translate" size={24} color={colors['on-surface']} />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Title Section */}
-        <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>{report.category ? `${report.category} Details` : 'Document Details'}</Text>
-          <View style={styles.dateRow}>
-            <MaterialIcons name="calendar-today" size={16} color={colors['on-surface-variant']} />
-            <Text style={styles.dateText}>Date: {report.extractedEventDate || report.uploadDate?.split('T')[0] || '15 August 2026'}</Text>
+        {/* Fancy Title Section */}
+        <Animated.View entering={FadeInDown.duration(800).springify()}>
+          <LinearGradient
+            colors={['#0A4A8F', '#20D5EA']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.fancyTitleSection}
+          >
+            <View style={styles.fancyTitleContent}>
+              <View style={styles.iconCircle}>
+                <MaterialIcons name="description" size={32} color="#0A4A8F" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fancyPageTitle} numberOfLines={2}>
+                  {report.title || report.originalFilename || (report.category ? `${report.category} Details` : 'Document Details')}
+                </Text>
+                <View style={styles.fancyDateRow}>
+                  <MaterialIcons name="event" size={16} color="rgba(255,255,255,0.9)" />
+                  <Text style={styles.fancyDateText}>{report.extractedEventDate || report.uploadDate?.split('T')[0] || '15 August 2026'}</Text>
+                </View>
+              </View>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Doctor and Pathology Info */}
+        <View style={styles.providerCard}>
+          <View style={styles.providerRow}>
+            <MaterialIcons name="local-hospital" size={20} color={colors.primary} />
+            <View style={styles.providerTextContainer}>
+              <Text style={styles.providerLabel}>Pathology / Lab</Text>
+              <Text style={styles.providerValue}>{report.labName || 'Himani Imaging & Diagnostics'}</Text>
+            </View>
+          </View>
+          
+          <View style={styles.providerDivider} />
+
+          <View style={styles.providerRow}>
+            <MaterialIcons name="person" size={20} color={colors.primary} />
+            <View style={styles.providerTextContainer}>
+              <Text style={styles.providerLabel}>Referred By</Text>
+              <Text style={styles.providerValue}>{report.doctorName || 'Dr. Sharma'}</Text>
+            </View>
           </View>
         </View>
 
         {/* Important Numbers Section */}
         <Text style={styles.sectionHeading}>Important Numbers</Text>
 
-        <View style={styles.metricsList}>
-          {displayMetrics.map((metric: any, index: number) => (
-            <View key={index} style={styles.metricCard}>
-              <View style={styles.metricHeader}>
-                <Text style={styles.metricName}>{metric.name}</Text>
-                <MaterialIcons name={(metric.icon || 'assessment') as any} size={20} color={colors.outline} />
+        <View style={styles.metricsContainer}>
+          {displayMetrics.map((metric: any, index: number) => {
+            const isLast = index === displayMetrics.length - 1;
+            return (
+              <View key={index} style={[styles.metricRow, !isLast && styles.metricDivider]}>
+                <View style={styles.metricRowLeft}>
+                  <View style={styles.metricIconContainer}>
+                    <MaterialIcons name={(metric.icon || 'assessment') as any} size={20} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.metricNameText} numberOfLines={1}>{metric.name}</Text>
+                    {metric.status !== 'normal' && (
+                      <Text style={styles.metricStatusAttentionText}>Needs attention</Text>
+                    )}
+                  </View>
+                </View>
+                <View style={styles.metricRowRight}>
+                  <Text style={styles.metricValueText}>{metric.value}</Text>
+                  {metric.unit ? <Text style={styles.metricUnitText}>{metric.unit}</Text> : null}
+                </View>
               </View>
+            );
+          })}
+        </View>
 
-              <View style={styles.metricValueRow}>
-                <Text style={styles.metricValue}>{metric.value}</Text>
-                <Text style={styles.metricUnit}>{metric.unit}</Text>
+        {/* Doctor's Summary Section */}
+        <Text style={[styles.sectionHeading, { marginTop: 24 }]}>Doctor's Summary</Text>
+        <View style={styles.summaryCard}>
+          {report.summary ? (
+            <View>
+              <View style={styles.summaryHeader}>
+                <MaterialIcons name="auto-awesome" size={20} color="#08A8C6" />
+                <Text style={styles.summaryTitle}>AI Analysis</Text>
               </View>
-
-              <View style={[
-                styles.statusPill,
-                metric.status === 'normal' ? styles.statusNormal : styles.statusAttention
-              ]}>
-                <MaterialIcons
-                  name={metric.status === 'normal' ? "check-circle" : "warning"}
-                  size={14}
-                  color={metric.status === 'normal' ? colors.primary : colors['on-surface-variant']}
-                />
-                <Text style={[
-                  styles.statusText,
-                  metric.status === 'normal' ? styles.statusTextNormal : styles.statusTextAttention
-                ]}>
-                  {metric.status === 'normal' ? 'Within normal range' : 'Needs attention'}
-                </Text>
-              </View>
+              <Text style={styles.summaryText}>{report.summary}</Text>
             </View>
-          ))}
+          ) : (
+            <View style={styles.generateSummaryContainer}>
+              <MaterialIcons name="psychology" size={48} color={colors.outline} style={{ marginBottom: 12 }} />
+              <Text style={styles.generateSummaryText}>Generate an AI-powered summary to easily understand your report.</Text>
+              <TouchableOpacity 
+                style={styles.generateButton} 
+                onPress={handleGenerateSummary}
+                disabled={summaryLoading}
+              >
+                {summaryLoading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <MaterialIcons name="auto-awesome" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={styles.generateButtonText}>Generate Summary</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
 
       {/* Sticky Footer */}
-      <View style={styles.stickyFooter}>
-        <AnimatedButton
-          title="Download PDF"
-          onPress={handleDownload}
-          style={styles.primaryButton}
-        />
-        <AnimatedButton
-          title="Share"
-          onPress={() => { }}
-          style={styles.secondaryButton}
-          textStyle={styles.secondaryButtonText}
-        />
+      <View style={styles.stickyFooterHorizontal}>
+        <TouchableOpacity style={styles.iconActionButton} onPress={handleDownload} disabled={downloading}>
+          {downloading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <MaterialIcons name="file-download" size={28} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.iconActionButton} onPress={handleShare}>
+          <MaterialIcons name="share" size={28} color="#FFFFFF" />
+        </TouchableOpacity>
       </View>
+
+      {/* Translation Loader Overlay */}
+      {translateLoading && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Translating...</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Language Selection Modal */}
+      <Modal
+        visible={showLangModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowLangModal(false)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowLangModal(false)}>
+          <View style={styles.bottomSheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Select Language</Text>
+            
+            <TouchableOpacity style={styles.langOption} onPress={() => handleTranslate('Hindi')}>
+              <Text style={styles.langOptionText}>Hindi (हिन्दी)</Text>
+              <MaterialIcons name="chevron-right" size={24} color={colors['on-surface-variant']} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.langOption} onPress={() => handleTranslate('Spanish')}>
+              <Text style={styles.langOptionText}>Spanish (Español)</Text>
+              <MaterialIcons name="chevron-right" size={24} color={colors['on-surface-variant']} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.langOption} onPress={() => handleTranslate('French')}>
+              <Text style={styles.langOptionText}>French (Français)</Text>
+              <MaterialIcons name="chevron-right" size={24} color={colors['on-surface-variant']} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.langOption} onPress={() => handleTranslate('English')}>
+              <Text style={styles.langOptionText}>English</Text>
+              <MaterialIcons name="chevron-right" size={24} color={colors['on-surface-variant']} />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -182,23 +406,90 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 40,
   },
-  titleSection: {
+  fancyTitleSection: {
+    borderRadius: 20,
     marginBottom: 24,
+    shadowColor: '#0A4A8F',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+    overflow: 'hidden',
   },
-  pageTitle: {
-    ...typography.headlineMd,
-    color: colors['on-surface'],
-    fontWeight: '800',
-    marginBottom: 8,
-  },
-  dateRow: {
+  fancyTitleContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 20,
+  },
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  fancyPageTitle: {
+    ...typography.headlineMd,
+    color: '#FFFFFF',
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  fancyDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
     gap: 6,
   },
-  dateText: {
+  fancyDateText: {
     ...typography.bodyMd,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  providerCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    padding: 16,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  providerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  providerTextContainer: {
+    marginLeft: 12,
+  },
+  providerLabel: {
+    fontSize: 12,
     color: colors['on-surface-variant'],
+    marginBottom: 2,
+  },
+  providerValue: {
+    ...typography.labelLg,
+    color: colors['on-surface'],
+  },
+  providerDivider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+    marginVertical: 12,
+    marginLeft: 32,
   },
   sectionHeading: {
     ...typography.Title2,
@@ -206,106 +497,197 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 16,
   },
-  metricsList: {
-    gap: 16,
-  },
-  metricCard: {
+  metricsContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    padding: 16,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
     shadowRadius: 4,
     elevation: 1,
   },
-  metricHeader: {
+  metricRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
-  metricName: {
+  metricDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  metricRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    paddingRight: 12,
+  },
+  metricIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(10, 74, 143, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  metricNameText: {
     ...typography.labelLg,
     color: colors['on-surface'],
   },
-  metricValueRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 12,
-  },
-  metricValue: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: colors['on-surface'],
-    marginRight: 4,
-  },
-  metricUnit: {
-    ...typography.bodyMd,
-    color: colors['on-surface'],
-  },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignSelf: 'flex-start',
-    gap: 6,
-  },
-  statusNormal: {
-    backgroundColor: '#E8F5E9',
-  },
-  statusAttention: {
-    backgroundColor: '#F5F5F5',
-  },
-  statusText: {
-    fontSize: 13,
+  metricStatusAttentionText: {
+    fontSize: 12,
+    color: colors.error,
+    marginTop: 2,
     fontWeight: '600',
   },
-  statusTextNormal: {
-    color: colors.primary,
+  metricRowRight: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
   },
-  statusTextAttention: {
+  metricValueText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors['on-surface'],
+  },
+  metricUnitText: {
+    ...typography.bodyMd,
     color: colors['on-surface-variant'],
+    marginLeft: 4,
   },
-  stickyFooter: {
+  summaryCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 24,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  summaryTitle: {
+    ...typography.labelLg,
+    color: '#08A8C6',
+    fontWeight: '700',
+    marginLeft: 8,
+  },
+  summaryText: {
+    ...typography.bodyLg,
+    color: colors['on-surface'],
+    lineHeight: 24,
+  },
+  generateSummaryContainer: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  generateSummaryText: {
+    ...typography.bodyMd,
+    color: colors['on-surface-variant'],
+    textAlign: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  generateButton: {
+    backgroundColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 100,
+    elevation: 2,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  generateButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  stickyFooterHorizontal: {
     padding: 20,
     backgroundColor: '#FAFAFA',
     borderTopWidth: 1,
     borderTopColor: colors['outline-variant'],
-    gap: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 24,
   },
-  primaryButton: {
+  iconActionButton: {
     backgroundColor: colors.primary,
-    height: 48,
-    borderRadius: 24,
-    flexDirection: 'row',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    elevation: 4,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
-  primaryButtonText: {
-    ...typography.labelLg,
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  secondaryButton: {
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    backgroundColor: 'transparent',
-    flexDirection: 'row',
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    zIndex: 1000,
   },
-  secondaryButtonText: {
+  loadingBox: {
+    backgroundColor: '#FFFFFF',
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    elevation: 5,
+  },
+  loadingText: {
     ...typography.labelLg,
-    color: colors.primary,
-    fontWeight: '700',
+    color: colors['on-surface'],
+    marginTop: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  bottomSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    minHeight: 300,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  sheetTitle: {
+    ...typography.Title2,
+    color: colors['on-surface'],
+    marginBottom: 16,
+  },
+  langOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  langOptionText: {
+    ...typography.bodyLg,
+    color: colors['on-surface'],
   },
 });

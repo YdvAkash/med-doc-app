@@ -63,6 +63,16 @@ export const getDocument = async (id: number) => {
   return response.data;
 };
 
+export const generateDocumentSummary = async (id: number) => {
+  const response = await api.post(`/documents/${id}/summary`);
+  return response.data;
+};
+
+export const translateDocument = async (id: number, language: string) => {
+  const response = await api.post(`/documents/${id}/translate?lang=${language}`);
+  return response.data;
+};
+
 export const deleteDocument = async (id: number) => {
   const response = await api.delete(`/documents/${id}`);
   return response.data;

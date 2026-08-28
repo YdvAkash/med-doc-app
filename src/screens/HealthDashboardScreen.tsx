@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
@@ -12,10 +13,13 @@ type Props = {
 export const HealthDashboardScreen: React.FC<Props> = ({ navigation }) => {
 
   const renderHeader = () => (
-    <View style={styles.headerSection}>
-      <Text style={styles.title}>My Health Journey</Text>
+    <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.headerSection}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.stackSm }}>
+        <MaterialIcons name="timeline" size={32} color={colors.primary} style={{ marginRight: 8 }} />
+        <Text style={[styles.title, { color: colors.primary, marginBottom: 0 }]}>My Health Journey</Text>
+      </View>
       <Text style={styles.subtitle}>See a timeline of your health records.</Text>
-    </View>
+    </Animated.View>
   );
 
   return (
