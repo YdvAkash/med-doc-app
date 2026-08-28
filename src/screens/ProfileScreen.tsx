@@ -12,7 +12,8 @@ import {
   Animated,
   TextInput,
   Image,
-  Alert
+  Alert,
+  Switch
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,12 +22,14 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useAuthStore } from '../store/useAuth';
 import { getProfile, updateProfile, uploadProfilePicture } from '../services/api';
 import { colors, typography, spacing } from '../theme';
+import { scheduleDailyReminder, cancelAllReminders, checkScheduledNotifications } from '../services/NotificationService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const ProfileScreen = ({ navigation }: any) => {
   const { user, token, logout } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -41,9 +44,46 @@ export const ProfileScreen = ({ navigation }: any) => {
   const scrollY = useRef(new Animated.Value(0)).current;
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
+  const [isReminderEnabled, setIsReminderEnabled] = useState(false);
+  const [reminderTime, setReminderTime] = useState(new Date());
+
   useEffect(() => {
     fetchProfile();
+    checkReminderStatus();
   }, []);
+
+  const checkReminderStatus = async () => {
+    try {
+      const storedStatus = await AsyncStorage.getItem('@daily_reminder');
+      if (storedStatus === 'true') {
+        setIsReminderEnabled(true);
+      }
+    } catch (e) {
+      console.log('Error reading reminder status');
+    }
+  };
+
+  const toggleReminder = async (value: boolean) => {
+    setIsReminderEnabled(value);
+    try {
+      await AsyncStorage.setItem('@daily_reminder', value ? 'true' : 'false');
+      if (value) {
+        // Scheduled at 01:53 AM for testing
+        const success = await scheduleDailyReminder(2, 34);
+        if (success) {
+          Alert.alert('Reminder Set!', 'You will be notified daily at 2:34 AM to upload your health reports.');
+        } else {
+          setIsReminderEnabled(false);
+          await AsyncStorage.setItem('@daily_reminder', 'false');
+          Alert.alert('Permission Denied', 'Please enable notifications for this app in your device settings.');
+        }
+      } else {
+        await cancelAllReminders();
+      }
+    } catch (e) {
+      console.log('Error toggling reminder', e);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -153,7 +193,7 @@ export const ProfileScreen = ({ navigation }: any) => {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-      
+
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.appBar}>
           <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('HomeTab')}>
@@ -163,7 +203,7 @@ export const ProfileScreen = ({ navigation }: any) => {
           <View style={{ width: 48 }} />
         </View>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-          <ScrollView 
+          <ScrollView
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
           >
@@ -201,6 +241,29 @@ export const ProfileScreen = ({ navigation }: any) => {
             </View>
 
             <View style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>Settings & Preferences</Text>
+
+              <View style={styles.settingRow}>
+                <View style={styles.settingInfo}>
+                  <View style={[styles.fieldIconWrapper, { backgroundColor: colors['primary-container'] }]}>
+                    <MaterialIcons name="notifications-active" size={22} color={colors.primary} />
+                  </View>
+                  <View style={styles.settingTexts}>
+                    <Text style={styles.settingLabel}>Daily Health Reminder</Text>
+                    <Text style={styles.settingDescription}>Get notified daily between 8-9 PM to upload & analyze reports</Text>
+                  </View>
+                </View>
+                <Switch
+                  trackColor={{ false: colors.outline, true: colors.primary }}
+                  thumbColor={colors.surface}
+                  ios_backgroundColor={colors.outline}
+                  onValueChange={toggleReminder}
+                  value={isReminderEnabled}
+                />
+              </View>
+            </View>
+
+            <View style={styles.sectionCard}>
               <TouchableOpacity style={styles.actionRow} onPress={logout}>
                 <View style={[styles.fieldIconWrapper, { backgroundColor: colors['error-container'] }]}>
                   <MaterialIcons name="logout" size={22} color={colors.error} />
@@ -208,12 +271,12 @@ export const ProfileScreen = ({ navigation }: any) => {
                 <Text style={styles.logoutText}>Sign Out</Text>
               </TouchableOpacity>
             </View>
-            
+
           </ScrollView>
         </KeyboardAvoidingView>
-        
-        <TouchableOpacity 
-          style={styles.fab} 
+
+        <TouchableOpacity
+          style={styles.fab}
           onPress={() => isEditing ? handleSave() : setIsEditing(true)}
           activeOpacity={0.9}
         >
@@ -231,7 +294,7 @@ export const ProfileScreen = ({ navigation }: any) => {
           }}
           onCancel={() => setDatePickerVisibility(false)}
         />
-        
+
       </SafeAreaView>
     </View>
   );
@@ -410,5 +473,31 @@ const styles = StyleSheet.create({
     ...typography.bodyLg,
     color: colors.error,
     fontWeight: '600',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  settingInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    paddingRight: 16,
+  },
+  settingTexts: {
+    flex: 1,
+  },
+  settingLabel: {
+    ...typography.bodyLg,
+    color: colors['on-surface'],
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  settingDescription: {
+    ...typography.bodySm,
+    color: colors['on-surface-variant'],
+    lineHeight: 18,
   },
 });

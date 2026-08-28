@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, TextInput, ActivityIndicator } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
@@ -48,9 +49,12 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Screen Title */}
-        <View style={styles.header}>
-          <Text style={styles.title}>My Reports</Text>
-        </View>
+        <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.header}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <MaterialIcons name="analytics" size={32} color={colors.primary} style={{ marginRight: 8 }} />
+            <Text style={[styles.title, { color: colors.primary, marginBottom: 0 }]}>My Reports</Text>
+          </View>
+        </Animated.View>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
@@ -89,8 +93,8 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
               <SkeletonLoader height={100} />
             </View>
           ) : reports.length === 0 ? (
-            <EmptyState 
-              title="No Reports Found" 
+            <EmptyState
+              title="No Reports Found"
               description="We couldn't find any medical reports matching your filters."
               icon={Files}
               actionLabel="Add Report"

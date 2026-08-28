@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Med-Doc-App",
+    "name": "Mediva",
     "slug": "Med-Doc-App",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,7 +12,7 @@
     "android": {
       "package": "com.meddoc.app",
       "adaptiveIcon": {
-        "backgroundColor": "#0A0A0F",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/logo.png"
       },
       "predictiveBackGestureEnabled": false
@@ -35,7 +35,14 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/logo.png",
+          "color": "#1C75D5"
+        }
+      ]
     ]
   }
 }

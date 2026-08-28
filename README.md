@@ -36,6 +36,11 @@ npm install
 # 2. Start the Metro bundler
 npm start
 ```
+```bash
+# 1. Install dependencies
+npx expo run:android
+
+```
 
 ---
 
