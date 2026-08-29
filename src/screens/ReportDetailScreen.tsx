@@ -9,6 +9,7 @@ import { getDocument, deleteDocument, generateDocumentSummary, translateDocument
 import { colors, typography } from '../theme';
 import { AnimatedButton } from '../components/common/AnimatedButton';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
+import { StartIoAds } from '../services/ads/StartIoAds';
 
 type Props = {
   route: any;
@@ -197,7 +198,13 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
       {/* Custom Header matching Mockup */}
       <View style={styles.customHeader}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIcon}>
+        <TouchableOpacity 
+          onPress={() => {
+            navigation.goBack();
+            StartIoAds.showInterstitialSafely();
+          }} 
+          style={styles.headerIcon}
+        >
           <MaterialIcons name="arrow-back" size={24} color={colors['on-surface']} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mediva</Text>

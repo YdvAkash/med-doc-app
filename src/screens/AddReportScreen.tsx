@@ -8,6 +8,7 @@ import * as Clipboard from 'expo-clipboard';
 import { uploadDocument, getDocument, getDocumentText, confirmDate } from '../services/api';
 import { colors, spacing, typography } from '../theme';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { StartIoAds } from '../services/ads/StartIoAds';
 
 type Props = {
   navigation: any;
@@ -144,6 +145,7 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
       Alert.alert('Success', 'Document added successfully!');
       setUploadState('idle');
       navigation.navigate('MainTabs', { screen: 'ReportsTab' });
+      StartIoAds.showInterstitialSafely();
     } catch (error) {
       console.error('Confirm date failed', error);
       Alert.alert('Error', 'Failed to confirm date.');

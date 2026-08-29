@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mediva",
     "slug": "Med-Doc-App",
-    "version": "1.0.0",
+    "version": "99.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
@@ -12,7 +12,11 @@
     "android": {
       "package": "com.meddoc.app",
       "permissions": [
-        "REQUEST_INSTALL_PACKAGES"
+        "REQUEST_INSTALL_PACKAGES",
+        "com.google.android.gms.permission.AD_ID",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",

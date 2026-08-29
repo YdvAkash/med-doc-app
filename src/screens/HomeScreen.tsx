@@ -25,6 +25,7 @@ import { FileSearch } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AnimatedHeaderBackground } from '../components/common/AnimatedHeaderBackground';
 import { MedivaLogo } from '../components/common/MedivaLogo';
+import { StartIoBanner } from '../../modules/expo-startio';
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -72,6 +73,12 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
     <LinearGradient colors={[colors.primaryLight, colors.background]} style={styles.container}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        
+        {/* Sticky Ad Banner at the Top */}
+        <View style={styles.stickyAdContainer}>
+          <StartIoBanner style={{ width: 320, height: 50, alignSelf: 'center' }} />
+        </View>
+
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
           {/* Header */}
@@ -106,6 +113,8 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
             onPress={() => navigation.navigate('AddReport')}
             style={styles.primaryButton}
           />
+
+
 
           {/* Quick Actions Grid */}
           <View style={styles.grid}>
@@ -268,6 +277,16 @@ const styles = StyleSheet.create({
     ...typography.labelLg,
     color: colors['on-primary'],
     marginLeft: 8,
+  },
+  stickyAdContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    paddingTop: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    zIndex: 10,
   },
   grid: {
     flexDirection: 'row',

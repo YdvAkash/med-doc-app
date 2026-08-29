@@ -24,6 +24,7 @@ import { getProfile, updateProfile, uploadProfilePicture } from '../services/api
 import { colors, typography, spacing } from '../theme';
 import { scheduleDailyReminder, cancelAllReminders, checkScheduledNotifications } from '../services/NotificationService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StartIoAds } from '../services/ads/StartIoAds';
 
 export const ProfileScreen = ({ navigation }: any) => {
   const { user, token, logout } = useAuthStore();
@@ -111,6 +112,7 @@ export const ProfileScreen = ({ navigation }: any) => {
       await updateProfile(formData);
       await fetchProfile();
       setIsEditing(false);
+      StartIoAds.showInterstitialSafely();
     } catch (err) {
       console.log('Update error:', err);
       Alert.alert('Error', 'Failed to update profile');
@@ -196,7 +198,10 @@ export const ProfileScreen = ({ navigation }: any) => {
 
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.appBar}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('HomeTab')}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => {
+            StartIoAds.showInterstitialSafely();
+            navigation.navigate('HomeTab');
+          }}>
             <MaterialIcons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.appBarTitle}>Profile</Text>
