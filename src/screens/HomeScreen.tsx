@@ -74,10 +74,12 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
         
-        {/* Sticky Ad Banner at the Top */}
-        <View style={styles.stickyAdContainer}>
-          <StartIoBanner style={{ width: 320, height: 50, alignSelf: 'center' }} />
-        </View>
+        {/* Ad Banner Overlay (Sticky at top, but pushed down slightly to not overlap status bar) */}
+        {(!user?.subscriptionTier || user?.subscriptionTier === 'FREE') && (
+          <View style={styles.stickyAdContainer}>
+            <StartIoBanner style={{ width: 320, height: 50, alignSelf: 'center' }} />
+          </View>
+        )}
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
@@ -106,6 +108,29 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
               )}
             </TouchableOpacity>
           </Animated.View>
+
+          {/* Upgrade Card (Show if not Pro) */}
+          {(user?.subscriptionTier !== 'PRO') && (
+            <TouchableOpacity 
+              style={styles.upgradeBanner}
+              onPress={() => navigation.navigate('Subscription')}
+            >
+              <LinearGradient
+                colors={['#08A8C6', '#068A9F']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.upgradeBannerGradient}
+              >
+                <View style={styles.upgradeBannerContent}>
+                  <View>
+                    <Text style={styles.upgradeBannerTitle}>Upgrade to Pro</Text>
+                    <Text style={styles.upgradeBannerSub}>Get unlimited AI chats & uploads</Text>
+                  </View>
+                  <MaterialIcons name="arrow-forward-ios" size={16} color="#FFFFFF" />
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
 
           {/* Primary Action Button */}
           <AnimatedButton
@@ -339,5 +364,102 @@ const styles = StyleSheet.create({
     color: colors['on-surface-variant'],
     ...typography.bodyMd,
     marginTop: 10,
+  },
+  greetingCard: {
+    margin: 16,
+    borderRadius: 24,
+    padding: 24,
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  greetingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    zIndex: 2,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  badgeText: {
+    color: '#E2E8F0',
+    fontSize: 11,
+    fontWeight: '700',
+    marginLeft: 4,
+    letterSpacing: 0.5,
+  },
+  greetingText: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  greetingSubtext: {
+    fontSize: 14,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  profileIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  profileIconImage: {
+    width: '100%',
+    height: '100%',
+  },
+  greetingBgIcon: {
+    position: 'absolute',
+    right: -20,
+    bottom: -20,
+    transform: [{ rotate: '-15deg' }],
+  },
+  upgradeBanner: {
+    marginHorizontal: 16,
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#08A8C6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  upgradeBannerGradient: {
+    padding: 16,
+  },
+  upgradeBannerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  upgradeBannerTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  upgradeBannerSub: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 13,
   }
 });

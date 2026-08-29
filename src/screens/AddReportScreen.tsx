@@ -86,9 +86,20 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
       setUploadState('processing');
       pollDocumentStatus(docId);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload failed', error);
-      Alert.alert('Upload Failed', 'There was an error uploading your document.');
+      if (error.response?.status === 403) {
+        Alert.alert(
+          'Limit Reached', 
+          error.response?.data?.message || 'Upload limit reached for your current plan.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Upgrade Plan', onPress: () => navigation.navigate('Subscription') }
+          ]
+        );
+      } else {
+        Alert.alert('Upload Failed', 'There was an error uploading your document.');
+      }
       setUploadState('idle');
     }
   };

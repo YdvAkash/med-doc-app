@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { loginUser, registerUser } from '../services/api';
+import { loginUser, registerUser, getProfile } from '../services/api';
 
 interface User {
   id?: string;
@@ -8,6 +8,8 @@ interface User {
   name?: string;
   firstName?: string;
   lastName?: string;
+  subscriptionTier?: string;
+  emergencyContactPhone?: string;
 }
 
 interface AuthState {
@@ -20,6 +22,7 @@ interface AuthState {
   register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  fetchProfile: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -70,6 +73,17 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     } catch (e) {
       set({ isInitialized: true });
+    }
+  },
+  fetchProfile: async () => {
+    try {
+      const res = await getProfile();
+      if (res.success && res.data) {
+        set({ user: res.data });
+        await AsyncStorage.setItem('user', JSON.stringify(res.data));
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile', error);
     }
   },
 }));
