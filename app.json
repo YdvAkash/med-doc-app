@@ -11,6 +11,9 @@
     },
     "android": {
       "package": "com.meddoc.app",
+      "permissions": [
+        "REQUEST_INSTALL_PACKAGES"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/logo.png"
