@@ -39,3 +39,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+modules/expo-startio/android/build/
+modules/expo-startio/android/.cxx/
+modules/expo-startio/android/.gradle/
