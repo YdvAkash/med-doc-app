@@ -67,6 +67,7 @@ const MainTabs = () => {
 };
 
 import { LoginSuccessOverlay } from '../components/common/LoginSuccessOverlay';
+import { SubscriptionScreen } from '../screens/SubscriptionScreen';
 
 export const AppNavigator = () => {
   const { token, isInitialized, checkAuth } = useAuthStore();
@@ -104,6 +105,7 @@ export const AppNavigator = () => {
               <Stack.Screen name="AddReport" component={AddReportScreen} />
               <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
               <Stack.Screen name="Documents" component={DocumentsScreen} />
+              <Stack.Screen name="Subscription" component={SubscriptionScreen} />
             </>
           )}
         </Stack.Navigator>

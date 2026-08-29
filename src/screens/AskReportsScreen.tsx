@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
@@ -87,8 +87,18 @@ export const AskReportsScreen: React.FC<Props> = ({ navigation }) => {
       if (res.success && res.data) {
         setMessages(prev => [...prev, res.data]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error asking question:', error);
+      if (error.response?.status === 403) {
+        Alert.alert(
+          'Limit Reached', 
+          error.response?.data?.message || 'Chat limit reached for your current plan.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Upgrade Plan', onPress: () => navigation.navigate('Subscription') }
+          ]
+        );
+      }
     } finally {
       setIsTyping(false);
       setTimeout(() => {

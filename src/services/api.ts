@@ -149,6 +149,16 @@ export const askQuestion = async (message: string) => {
   return response.data;
 };
 
+export const createOrder = async (plan: string) => {
+  const response = await api.post('/subscription/create-order', { plan });
+  return response.data;
+};
+
+export const verifyPayment = async (razorpayOrderId: string, razorpayPaymentId: string, razorpaySignature: string, plan: string) => {
+  const response = await api.post('/subscription/verify-payment', { razorpayOrderId, razorpayPaymentId, razorpaySignature, plan });
+  return response.data;
+};
+
 export const getChatHistory = async (page = 0, size = 20) => {
   const response = await api.get(`/chat/history?page=${page}&size=${size}`);
   return response.data;

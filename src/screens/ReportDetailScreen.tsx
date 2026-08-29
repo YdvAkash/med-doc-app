@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeIn, FadeOut } from 'react-native-reanimated';
 import * as FileSystem from 'expo-file-system/legacy';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDocument, deleteDocument, generateDocumentSummary, translateDocument } from '../services/api';
 import { colors, typography } from '../theme';
 import { AnimatedButton } from '../components/common/AnimatedButton';
@@ -72,30 +73,58 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     
     setDownloading(true);
     try {
-      const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+      let directoryUri = await AsyncStorage.getItem('@download_directory_uri');
       
-      if (permissions.granted) {
-        const fileUri = report.downloadUrl;
-        const fileName = report.title ? `${report.title.replace(/\s+/g, '_')}.pdf` : 'Medical_Report.pdf';
-        
-        // Download to app's cache directory first
-        const downloadResult = await FileSystem.downloadAsync(
-          fileUri,
-          FileSystem.cacheDirectory + fileName
-        );
-        
-        // Save to the selected directory
+      if (!directoryUri) {
+        const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+        if (permissions.granted) {
+          directoryUri = permissions.directoryUri;
+          await AsyncStorage.setItem('@download_directory_uri', directoryUri);
+        } else {
+          Alert.alert('Permission Denied', 'Please grant folder permissions to save the file.');
+          setDownloading(false);
+          return;
+        }
+      }
+
+      const fileUri = report.downloadUrl;
+      let extension = '.pdf';
+      let mimeType = 'application/pdf';
+      
+      // Determine file type from original filename or download URL
+      const sourceName = report.originalFilename || fileUri;
+      if (sourceName.toLowerCase().includes('.jpg') || sourceName.toLowerCase().includes('.jpeg')) {
+        extension = '.jpg';
+        mimeType = 'image/jpeg';
+      } else if (sourceName.toLowerCase().includes('.png')) {
+        extension = '.png';
+        mimeType = 'image/png';
+      }
+
+      const fileName = report.title ? `${report.title.replace(/\\s+/g, '_')}${extension}` : `Medical_Report${extension}`;
+      
+      // Download to app's cache directory first
+      const downloadResult = await FileSystem.downloadAsync(
+        fileUri,
+        FileSystem.cacheDirectory + fileName
+      );
+      
+      // Save to the selected directory
+      try {
         const base64 = await FileSystem.readAsStringAsync(downloadResult.uri, { encoding: FileSystem.EncodingType.Base64 });
         const newFileUri = await FileSystem.StorageAccessFramework.createFileAsync(
-          permissions.directoryUri,
+          directoryUri,
           fileName,
-          'application/pdf'
+          mimeType
         );
         await FileSystem.writeAsStringAsync(newFileUri, base64, { encoding: FileSystem.EncodingType.Base64 });
         
-        Alert.alert('Success', 'PDF downloaded to your device successfully!');
-      } else {
-        Alert.alert('Permission Denied', 'Please grant folder permissions to save the file.');
+        Alert.alert('Success', `Report downloaded to your device successfully!`);
+      } catch (innerError) {
+        // If writing fails (e.g. permission revoked), prompt again next time
+        await AsyncStorage.removeItem('@download_directory_uri');
+        console.error('File write error:', innerError);
+        Alert.alert('Download Failed', 'Could not access the saved folder. Please try downloading again to select a new folder.');
       }
     } catch (e) {
       console.error('Download error:', e);
@@ -184,13 +213,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     );
   }
 
-  const mockedMetrics = [
-    { id: 1, name: 'Blood Sugar', value: '108', unit: 'mg/dL', status: 'normal', icon: 'water-drop' },
-    { id: 2, name: 'HbA1c', value: '6.2', unit: '%', status: 'attention', icon: 'science' },
-    { id: 3, name: 'Cholesterol', value: '190', unit: 'mg/dL', status: 'normal', icon: 'monitor-heart' }
-  ];
-
-  const displayMetrics = report.metrics && report.metrics.length > 0 ? report.metrics : mockedMetrics;
+  const displayMetrics = report.metrics && report.metrics.length > 0 ? report.metrics : [];
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
