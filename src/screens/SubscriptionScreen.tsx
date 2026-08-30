@@ -16,7 +16,7 @@ export const SubscriptionScreen: React.FC<Props> = ({ navigation }) => {
   const { user, fetchProfile } = useAuthStore();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const RAZORPAY_KEY_ID = 'rzp_test_TViTYrWlm0LxVm';
+  const RAZORPAY_KEY_ID = 'rzp_test_TVtRFkDuf8X59H';
 
   const handleSubscribe = async (plan: string, amount: number) => {
     setLoadingPlan(plan);
@@ -28,21 +28,23 @@ export const SubscriptionScreen: React.FC<Props> = ({ navigation }) => {
         return;
       }
 
-      const options = {
+      const options: any = {
         description: `Mediva ${plan} Subscription`,
         image: 'https://i.imgur.com/3g7nmJC.png',
         currency: 'INR',
         key: RAZORPAY_KEY_ID,
-        amount: amount * 100,
+        amount: (amount * 100).toString(),
         name: 'Mediva',
         order_id: orderRes.orderId,
-        prefill: {
-          email: user?.email,
-          contact: user?.emergencyContactPhone || '',
-          name: `${user?.firstName} ${user?.lastName}`,
-        },
         theme: { color: colors.primary },
       };
+
+      if (user?.email || user?.emergencyContactPhone || user?.firstName) {
+        options.prefill = {};
+        if (user?.email) options.prefill.email = user.email;
+        if (user?.emergencyContactPhone) options.prefill.contact = user.emergencyContactPhone;
+        if (user?.firstName) options.prefill.name = `${user.firstName} ${user.lastName || ''}`.trim();
+      }
 
       RazorpayCheckout.open(options)
         .then(async (data: any) => {
