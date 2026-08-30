@@ -163,3 +163,8 @@ export const getChatHistory = async (page = 0, size = 20) => {
   const response = await api.get(`/chat/history?page=${page}&size=${size}`);
   return response.data;
 };
+
+export const updatePushToken = async (token: string) => {
+  const response = await api.put('/auth/profile/push-token', { token });
+  return response.data;
+};

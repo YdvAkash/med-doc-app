@@ -42,3 +42,7 @@ yarn-error.*
 modules/expo-startio/android/build/
 modules/expo-startio/android/.cxx/
 modules/expo-startio/android/.gradle/
+
+# Firebase
+google-services.json
+fcm-service-account.json

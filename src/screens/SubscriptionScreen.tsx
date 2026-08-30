@@ -16,7 +16,8 @@ export const SubscriptionScreen: React.FC<Props> = ({ navigation }) => {
   const { user, fetchProfile } = useAuthStore();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const RAZORPAY_KEY_ID = 'rzp_test_TVtRFkDuf8X59H';
+  // Use environment variable for Razorpay Key, with fallback for local testing if not set
+  const RAZORPAY_KEY_ID = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TVtRFkDuf8X59H';
 
   const handleSubscribe = async (plan: string, amount: number) => {
     setLoadingPlan(plan);
