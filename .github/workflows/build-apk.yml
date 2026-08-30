@@ -43,8 +43,10 @@ jobs:
           echo "EXPO_PUBLIC_RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}" > .env
 
       - name: Create google-services.json
+        env:
+          FIREBASE_JSON: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON }}
         run: |
-          echo '${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON }}' > google-services.json
+          echo "$FIREBASE_JSON" > google-services.json
 
       - name: Prebuild Expo project
         run: npx expo prebuild --clean
