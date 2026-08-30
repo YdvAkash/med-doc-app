@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { loginUser, registerUser, getProfile } from '../services/api';
+import { loginUser, registerUser, getProfile, updatePushToken } from '../services/api';
+import { requestNotificationPermissions } from '../services/NotificationService';
 
 interface User {
   id?: string;
@@ -25,6 +26,18 @@ interface AuthState {
   fetchProfile: () => Promise<void>;
 }
 
+const syncPushToken = async () => {
+  try {
+    const pushToken = await requestNotificationPermissions();
+    if (pushToken && typeof pushToken === 'string') {
+      await updatePushToken(pushToken);
+      console.log('Push token synced with server');
+    }
+  } catch (err) {
+    console.error('Failed to sync push token', err);
+  }
+};
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   token: null,
@@ -40,6 +53,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       await AsyncStorage.setItem('token', token);
       await AsyncStorage.setItem('user', JSON.stringify(user));
       set({ user, token, isLoading: false });
+      
+      // Sync push token after successful login
+      syncPushToken();
     } catch (error) {
       set({ isLoading: false });
       throw error;
@@ -68,6 +84,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       const userStr = await AsyncStorage.getItem('user');
       if (token && userStr) {
         set({ token, user: JSON.parse(userStr), isInitialized: true });
+        // Sync push token on app start if logged in
+        syncPushToken();
       } else {
         set({ isInitialized: true });
       }

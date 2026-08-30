@@ -29,6 +29,17 @@ export const requestNotificationPermissions = async () => {
     return false;
   }
 
+  let token = null;
+  try {
+    // Note: To send push notifications through Expo, we need to provide a projectId. 
+    // This is extracted from app.json
+    const projectId = "10d4e470-0403-474f-b0fc-131f7fc8ddd0";
+    token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+    console.log("Expo Push Token:", token);
+  } catch (error) {
+    console.error("Error getting Expo Push Token:", error);
+  }
+
   if (Platform.OS === 'android') {
     Notifications.setNotificationChannelAsync('default', {
       name: 'default',
@@ -38,7 +49,7 @@ export const requestNotificationPermissions = async () => {
     });
   }
 
-  return true;
+  return token;
 };
 
 export const scheduleDailyReminder = async (hour: number = 20, minute: number = 30) => {

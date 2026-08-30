@@ -4,9 +4,11 @@ import { useAuthStore } from '../../store/useAuth';
 
 class StartIoAdsService {
   private isInitialized = false;
+  private timer: NodeJS.Timeout | null = null;
   private lastInterstitialTime = 0;
   private readonly COOLDOWN_MS = 0; // 0 minutes for testing
   private readonly START_IO_APP_ID = '207384927';
+  private readonly AD_INTERVAL_MS = 4 * 60 * 1000; // 4 minutes
 
   init() {
     if (this.isInitialized || Platform.OS !== 'android') return;
@@ -14,6 +16,13 @@ class StartIoAdsService {
       initStartIo(this.START_IO_APP_ID, __DEV__);
       this.isInitialized = true;
       console.log('Start.io Ads initialized safely');
+
+      // Start 4 minute ad timer
+      if (!this.timer) {
+        this.timer = setInterval(() => {
+          this.showInterstitialSafely();
+        }, this.AD_INTERVAL_MS);
+      }
     } catch (e) {
       console.warn('Failed to initialize Start.io Ads', e);
     }
