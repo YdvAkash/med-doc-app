@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as IntentLauncher from 'expo-intent-launcher';
-import Constants from 'expo-constants';
 import { Alert, Platform } from 'react-native';
+import { APP_VERSION } from '../version';
 
 const GITHUB_REPO = 'YdvAkash/med-doc-app';
 
@@ -16,20 +16,14 @@ interface GitHubRelease {
 
 export class UpdateService {
   /**
-   * Compares two semantic version strings (e.g., '1.0.0' and '1.0.1').
-   * Returns true if versionB is newer than versionA.
+   * Checks if latestVersion is newer than currentVersion.
    */
-  private static isNewerVersion(versionA: string, versionB: string): boolean {
-    const vA = versionA.replace('v', '').split('.').map(Number);
-    const vB = versionB.replace('v', '').split('.').map(Number);
-
-    for (let i = 0; i < Math.max(vA.length, vB.length); i++) {
-      const numA = vA[i] || 0;
-      const numB = vB[i] || 0;
-      if (numB > numA) return true;
-      if (numB < numA) return false;
+  private static isNewerVersion(currentVersion: string, latestVersion: string): boolean {
+    if (currentVersion === 'dev') {
+      return false; // Disable update prompts for local development
     }
-    return false;
+    // If the current version is different from the latest GitHub release, an update is available.
+    return currentVersion !== latestVersion;
   }
 
   /**
@@ -50,7 +44,7 @@ export class UpdateService {
 
       const release: GitHubRelease = await response.json();
       const latestVersion = release.tag_name;
-      const currentVersion = Constants.expoConfig?.version || '1.0.0';
+      const currentVersion = APP_VERSION;
 
       if (this.isNewerVersion(currentVersion, latestVersion)) {
         // Find the APK asset

@@ -50,6 +50,10 @@ jobs:
         run: |
           echo "TAG_NAME=v$(date +'%Y.%m.%d')-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
+      - name: Inject Version
+        run: |
+          echo "export const APP_VERSION = '${{ env.TAG_NAME }}';" > src/version.ts
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:

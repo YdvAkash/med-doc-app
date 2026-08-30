@@ -8,7 +8,7 @@ import { StartIoAds } from './src/services/ads/StartIoAds';
 export default function App() {
   useEffect(() => {
     StartIoAds.init();
-    UpdateService.checkForUpdates(false);
+    UpdateService.checkForUpdates();
   }, []);
 
   return (
