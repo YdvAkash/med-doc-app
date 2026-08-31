@@ -92,7 +92,9 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
                 <Text style={styles.brandTextSmall}>Mediva</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.greeting}>Hello, {firstName}</Text>
+                <Text style={styles.greeting}>
+                  Hello, {`${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User'}
+                </Text>
               </View>
               <Text style={styles.subtitle}>Your health records are safe here.</Text>
             </View>

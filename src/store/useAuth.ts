@@ -10,7 +10,13 @@ interface User {
   firstName?: string;
   lastName?: string;
   subscriptionTier?: string;
+  reportsUploadedThisWeek?: number;
+  chatsThisWeek?: number;
   emergencyContactPhone?: string;
+  phone?: string;
+  bloodGroup?: string;
+  dateOfBirth?: string;
+  profilePictureUrl?: string;
 }
 
 interface AuthState {

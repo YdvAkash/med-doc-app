@@ -7,6 +7,7 @@ import { colors, typography } from '../theme';
 import { useAuthStore } from '../store/useAuth';
 import { createOrder, verifyPayment } from '../services/api';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SubscriptionSuccessModal } from '../components/SubscriptionSuccessModal';
 
 type Props = {
   navigation: any;
@@ -15,6 +16,8 @@ type Props = {
 export const SubscriptionScreen: React.FC<Props> = ({ navigation }) => {
   const { user, fetchProfile } = useAuthStore();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [subscribedPlan, setSubscribedPlan] = useState('');
 
   // Use environment variable for Razorpay Key, with fallback for local testing if not set
   const RAZORPAY_KEY_ID = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TVtRFkDuf8X59H';
@@ -51,9 +54,9 @@ export const SubscriptionScreen: React.FC<Props> = ({ navigation }) => {
         .then(async (data: any) => {
           const verifyRes = await verifyPayment(data.razorpay_order_id, data.razorpay_payment_id, data.razorpay_signature, plan);
           if (verifyRes.success) {
-            Alert.alert('Success', `You are now on the ${plan} plan!`);
             await fetchProfile(); // refresh user tier
-            navigation.goBack();
+            setSubscribedPlan(plan);
+            setShowSuccessModal(true);
           } else {
             Alert.alert('Payment Failed', 'Payment verification failed.');
           }
@@ -182,6 +185,16 @@ export const SubscriptionScreen: React.FC<Props> = ({ navigation }) => {
         </Animated.View>
 
       </ScrollView>
+
+      <SubscriptionSuccessModal
+        visible={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          navigation.goBack();
+        }}
+        userName={user?.firstName || 'Valued Member'}
+        planName={subscribedPlan}
+      />
     </SafeAreaView>
   );
 };

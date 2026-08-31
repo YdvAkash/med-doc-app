@@ -23,6 +23,7 @@ import { MedicalBackground } from '../components/common/MedicalBackground';
 import { AnimatedAuthHeading } from '../components/common/AnimatedAuthHeading';
 import { PremiumTextInput } from '../components/common/PremiumTextInput';
 import { MedivaLogo } from '../components/common/MedivaLogo';
+import Toast from 'react-native-toast-message';
 
 export const LoginScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
@@ -40,6 +41,12 @@ export const LoginScreen = ({ navigation }: any) => {
 
     try {
       await login(email, password);
+      Toast.show({
+        type: 'success',
+        text1: 'Welcome Back!',
+        text2: 'Thanks for logging in.',
+        position: 'top',
+      });
     } catch (err: any) {
       const code = err.response?.data?.code;
       const errorMessage = getUserFriendlyErrorMessage(err);

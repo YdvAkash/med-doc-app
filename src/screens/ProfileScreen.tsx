@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,26 +9,31 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
-  Animated,
   TextInput,
   Image,
   Alert,
-  Switch
+  Switch,
+  Dimensions
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '../store/useAuth';
 import { getProfile, updateProfile, uploadProfilePicture } from '../services/api';
-import { colors, typography, spacing } from '../theme';
-import { scheduleDailyReminder, cancelAllReminders, checkScheduledNotifications } from '../services/NotificationService';
+import { colors, typography } from '../theme';
+import { scheduleDailyReminder, cancelAllReminders } from '../services/NotificationService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StartIoAds } from '../services/ads/StartIoAds';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+
+const { width } = Dimensions.get('window');
 
 export const ProfileScreen = ({ navigation }: any) => {
-  const { user, token, logout } = useAuthStore();
+  const { user, logout, fetchProfile: updateStoreProfile } = useAuthStore();
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<any>(null);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -42,11 +47,8 @@ export const ProfileScreen = ({ navigation }: any) => {
     profilePictureUrl: '',
   });
 
-  const scrollY = useRef(new Animated.Value(0)).current;
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-
   const [isReminderEnabled, setIsReminderEnabled] = useState(false);
-  const [reminderTime, setReminderTime] = useState(new Date());
 
   useEffect(() => {
     fetchProfile();
@@ -69,14 +71,13 @@ export const ProfileScreen = ({ navigation }: any) => {
     try {
       await AsyncStorage.setItem('@daily_reminder', value ? 'true' : 'false');
       if (value) {
-        // Scheduled at 01:53 AM for testing
-        const success = await scheduleDailyReminder(2, 34);
+        const success = await scheduleDailyReminder(20, 0); // 8:00 PM
         if (success) {
-          Alert.alert('Reminder Set!', 'You will be notified daily at 2:34 AM to upload your health reports.');
+          Alert.alert('Reminder Set!', 'You will be notified daily at 8:00 PM.');
         } else {
           setIsReminderEnabled(false);
           await AsyncStorage.setItem('@daily_reminder', 'false');
-          Alert.alert('Permission Denied', 'Please enable notifications for this app in your device settings.');
+          Alert.alert('Permission Denied', 'Please enable notifications for this app.');
         }
       } else {
         await cancelAllReminders();
@@ -99,6 +100,7 @@ export const ProfileScreen = ({ navigation }: any) => {
         dateOfBirth: res.data.dateOfBirth || '',
         profilePictureUrl: res.data.profilePictureUrl || '',
       });
+      updateStoreProfile(); // Keep global store in sync
     } catch (err) {
       console.log('Fetch profile error:', err);
     } finally {
@@ -107,7 +109,7 @@ export const ProfileScreen = ({ navigation }: any) => {
   };
 
   const handleSave = async () => {
-    setLoading(true);
+    setSaving(true);
     try {
       await updateProfile(formData);
       await fetchProfile();
@@ -117,7 +119,7 @@ export const ProfileScreen = ({ navigation }: any) => {
       console.log('Update error:', err);
       Alert.alert('Error', 'Failed to update profile');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -125,21 +127,19 @@ export const ProfileScreen = ({ navigation }: any) => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: false,
+        allowsEditing: true,
+        aspect: [1, 1],
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets[0]) {
         setLoading(true);
         const asset = result.assets[0];
-        // Upload document
         const filename = asset.uri.split('/').pop() || 'profile.jpg';
-        // Need to parse mime type from extension or use image/jpeg
         const uploadRes = await uploadProfilePicture(asset.uri, 'image/jpeg', filename);
         if (uploadRes.data?.profilePictureUrl) {
           const newUrl = uploadRes.data.profilePictureUrl;
           setFormData(prev => ({ ...prev, profilePictureUrl: newUrl }));
-          // Auto save profile with new image (uploadProfilePicture already saves it in backend)
           await fetchProfile();
         }
       }
@@ -160,157 +160,231 @@ export const ProfileScreen = ({ navigation }: any) => {
   }
 
   const initials = ((profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '')).toUpperCase() || user?.email?.slice(0, 2).toUpperCase() || 'U';
+  const isPro = profile?.subscriptionTier === 'PRO';
+  const tierColor = isPro ? '#F59E0B' : (profile?.subscriptionTier === 'BASIC' ? '#3B82F6' : '#64748B');
 
   const renderField = (icon: any, label: string, key: keyof typeof formData, editable: boolean = true) => (
-    <View style={styles.fieldContainer}>
-      <View style={styles.fieldIconWrapper}>
-        <MaterialIcons name={icon} size={22} color={colors.primary} />
+    <View style={styles.settingRow}>
+      <View style={styles.settingIconWrapper}>
+        <MaterialIcons name={icon} size={20} color={colors.primary} />
       </View>
-      <View style={styles.fieldContent}>
-        <Text style={styles.fieldLabel}>{label}</Text>
+      <View style={[styles.settingContent, isEditing && editable && styles.editingBorder]}>
+        <Text style={styles.settingLabel}>{label}</Text>
         {isEditing && editable ? (
           key === 'dateOfBirth' ? (
             <TouchableOpacity activeOpacity={0.8} onPress={() => setDatePickerVisibility(true)}>
-              <Text style={[styles.fieldInput, { color: formData[key] ? colors['on-surface'] : colors.outline }]}>
+              <Text style={[styles.settingValue, { color: formData[key] ? colors['on-surface'] : colors.outline }]}>
                 {formData[key] || 'Select Date'}
               </Text>
             </TouchableOpacity>
           ) : (
             <TextInput
-              style={styles.fieldInput}
+              style={styles.settingInput}
               value={formData[key]}
               onChangeText={(text) => setFormData({ ...formData, [key]: text })}
               placeholderTextColor={colors.outline}
               placeholder={`Enter ${label}`}
+              keyboardType={key === 'email' ? 'email-address' : key === 'phone' ? 'phone-pad' : 'default'}
+              autoCapitalize={key === 'email' ? 'none' : 'words'}
             />
           )
         ) : (
-          <Text style={styles.fieldValue}>{formData[key] || 'Not provided'}</Text>
+          <Text style={styles.settingValue}>{formData[key] || 'Not provided'}</Text>
         )}
       </View>
+      {!isEditing && <MaterialIcons name="chevron-right" size={20} color="#CBD5E1" />}
     </View>
   );
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+      <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
 
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.appBar}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => {
-            StartIoAds.showInterstitialSafely();
-            navigation.navigate('HomeTab');
-          }}>
-            <MaterialIcons name="arrow-back" size={24} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.appBarTitle}>Profile</Text>
-          <View style={{ width: 48 }} />
-        </View>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-          <ScrollView
-            contentContainerStyle={styles.content}
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={styles.header}>
-              <View style={styles.avatarWrapper}>
-                {profile?.profilePictureUrl || formData.profilePictureUrl ? (
-                  <Image source={{ uri: formData.profilePictureUrl || profile.profilePictureUrl }} style={styles.avatarImage} />
-                ) : (
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{initials}</Text>
-                  </View>
-                )}
-                {isEditing && (
-                  <TouchableOpacity style={styles.editAvatarBadge} onPress={handlePickImage} activeOpacity={0.8}>
-                    <MaterialIcons name="camera-alt" size={16} color={colors['on-primary']} />
-                  </TouchableOpacity>
-                )}
-              </View>
-              <Text style={styles.name}>{`${profile?.firstName || ''} ${profile?.lastName || ''}`.trim() || 'User'}</Text>
-              <Text style={styles.email}>{profile?.email}</Text>
-            </View>
-
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Personal Information</Text>
-              {renderField('person', 'First Name', 'firstName')}
-              {renderField('person-outline', 'Last Name', 'lastName')}
-              {renderField('email', 'Email Address', 'email', false)}
-              {renderField('phone', 'Phone Number', 'phone')}
-            </View>
-
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Medical Details</Text>
-              {renderField('bloodtype', 'Blood Group', 'bloodGroup')}
-              {renderField('cake', 'Date of Birth', 'dateOfBirth')}
-            </View>
-
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Settings & Preferences</Text>
-
-              <View style={styles.settingRow}>
-                <View style={styles.settingInfo}>
-                  <View style={[styles.fieldIconWrapper, { backgroundColor: colors['primary-container'] }]}>
-                    <MaterialIcons name="notifications-active" size={22} color={colors.primary} />
-                  </View>
-                  <View style={styles.settingTexts}>
-                    <Text style={styles.settingLabel}>Daily Health Reminder</Text>
-                    <Text style={styles.settingDescription}>Get notified daily between 8-9 PM to upload & analyze reports</Text>
-                  </View>
-                </View>
-                <Switch
-                  trackColor={{ false: colors.outline, true: colors.primary }}
-                  thumbColor={colors.surface}
-                  ios_backgroundColor={colors.outline}
-                  onValueChange={toggleReminder}
-                  value={isReminderEnabled}
-                />
-              </View>
-            </View>
-
-            <View style={styles.sectionCard}>
-              <TouchableOpacity style={styles.actionRow} onPress={logout}>
-                <View style={[styles.fieldIconWrapper, { backgroundColor: colors['error-container'] }]}>
-                  <MaterialIcons name="logout" size={22} color={colors.error} />
-                </View>
-                <Text style={styles.logoutText}>Sign Out</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={false}>
+        
+        {/* PREMIUM HEADER BACKGROUND */}
+        <LinearGradient colors={[colors.primary, '#0284C7']} style={styles.headerBackground}>
+          <SafeAreaView edges={['top']}>
+            <View style={styles.appBar}>
+              <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
+                <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
               </TouchableOpacity>
+              <Text style={styles.appBarTitle}>Profile</Text>
+              <View style={{ width: 48 }} />
             </View>
+          </SafeAreaView>
+        </LinearGradient>
 
-          </ScrollView>
-        </KeyboardAvoidingView>
+        <View style={styles.mainContent}>
+          {/* AVATAR OVERLAPPING HEADER */}
+          <Animated.View entering={FadeInDown.duration(400)} style={styles.avatarContainer}>
+            <View style={styles.avatarWrapper}>
+              {profile?.profilePictureUrl || formData.profilePictureUrl ? (
+                <Image source={{ uri: formData.profilePictureUrl || profile.profilePictureUrl }} style={styles.avatarImage} />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarText}>{initials}</Text>
+                </View>
+              )}
+              {isEditing && (
+                <TouchableOpacity style={styles.editAvatarBadge} onPress={handlePickImage} activeOpacity={0.9}>
+                  <MaterialIcons name="camera-alt" size={16} color="#FFFFFF" />
+                </TouchableOpacity>
+              )}
+            </View>
+            <Text style={styles.userName}>
+              {`${profile?.firstName || ''} ${profile?.lastName || ''}`.trim() || 'User'}
+            </Text>
+            
+            {/* SUBSCRIPTION BADGE */}
+            <TouchableOpacity 
+              style={[styles.tierBadge, { backgroundColor: tierColor + '15', borderColor: tierColor }]}
+              onPress={() => !isPro && navigation.navigate('Subscription')}
+              activeOpacity={isPro ? 1 : 0.7}
+            >
+              <MaterialIcons name={isPro ? "workspace-premium" : "star"} size={16} color={tierColor} />
+              <Text style={[styles.tierBadgeText, { color: tierColor }]}>{profile?.subscriptionTier || 'FREE'} PLAN</Text>
+              {!isPro && <MaterialIcons name="arrow-forward" size={14} color={tierColor} style={{ marginLeft: 4 }} />}
+            </TouchableOpacity>
+          </Animated.View>
 
-        <TouchableOpacity
-          style={styles.fab}
-          onPress={() => isEditing ? handleSave() : setIsEditing(true)}
-          activeOpacity={0.9}
-        >
-          <MaterialIcons name={isEditing ? "check" : "edit"} size={24} color={colors['on-primary']} />
-        </TouchableOpacity>
+          {/* USAGE STATS ROW */}
+          <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <View style={[styles.statIconWrapper, { backgroundColor: '#EEF2FF' }]}>
+                <MaterialIcons name="upload-file" size={22} color="#4F46E5" />
+              </View>
+              <Text style={styles.statValue}>{profile?.reportsUploadedThisWeek || 0}</Text>
+              <Text style={styles.statLabel}>Reports (This Week)</Text>
+            </View>
+            <View style={styles.statCard}>
+              <View style={[styles.statIconWrapper, { backgroundColor: '#ECFDF5' }]}>
+                <MaterialIcons name="forum" size={22} color="#10B981" />
+              </View>
+              <Text style={styles.statValue}>{profile?.chatsThisWeek || 0}</Text>
+              <Text style={styles.statLabel}>Chats (This Week)</Text>
+            </View>
+          </Animated.View>
 
-        <DateTimePickerModal
-          isVisible={isDatePickerVisible}
-          mode="date"
-          date={formData.dateOfBirth ? new Date(formData.dateOfBirth) : new Date()}
-          onConfirm={(date) => {
-            setDatePickerVisibility(false);
-            const formatted = date.toISOString().split('T')[0];
-            setFormData({ ...formData, dateOfBirth: formatted });
-          }}
-          onCancel={() => setDatePickerVisibility(false)}
-        />
+          {/* EDIT BUTTON */}
+          <Animated.View entering={FadeInDown.delay(150).duration(400)}>
+            {!isEditing ? (
+              <TouchableOpacity style={styles.editProfileBtn} onPress={() => setIsEditing(true)}>
+                <MaterialIcons name="edit" size={18} color="#FFFFFF" />
+                <Text style={styles.editProfileBtnText}>Edit Profile</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.editActionsRow}>
+                <TouchableOpacity style={[styles.editProfileBtn, styles.cancelBtn]} onPress={() => setIsEditing(false)}>
+                  <Text style={[styles.editProfileBtnText, { color: '#64748B' }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.editProfileBtn, styles.saveBtn]} onPress={handleSave} disabled={saving}>
+                  {saving ? <ActivityIndicator size="small" color="#FFF" /> : (
+                    <>
+                      <MaterialIcons name="check" size={18} color="#FFFFFF" />
+                      <Text style={styles.editProfileBtnText}>Save Changes</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </Animated.View>
 
-      </SafeAreaView>
+          {/* SETTINGS CARDS */}
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+            
+            <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.sectionGroup}>
+              <Text style={styles.sectionHeader}>PERSONAL INFORMATION</Text>
+              <View style={styles.card}>
+                {renderField('person', 'First Name', 'firstName')}
+                <View style={styles.divider} />
+                {renderField('person-outline', 'Last Name', 'lastName')}
+                <View style={styles.divider} />
+                {renderField('email', 'Email Address', 'email', false)}
+                <View style={styles.divider} />
+                {renderField('phone', 'Phone Number', 'phone')}
+              </View>
+            </Animated.View>
+
+            <Animated.View entering={FadeInDown.delay(300).duration(400)} style={styles.sectionGroup}>
+              <Text style={styles.sectionHeader}>MEDICAL DETAILS</Text>
+              <View style={styles.card}>
+                {renderField('bloodtype', 'Blood Group', 'bloodGroup')}
+                <View style={styles.divider} />
+                {renderField('cake', 'Date of Birth', 'dateOfBirth')}
+              </View>
+            </Animated.View>
+
+            <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.sectionGroup}>
+              <Text style={styles.sectionHeader}>PREFERENCES</Text>
+              <View style={styles.card}>
+                <View style={[styles.settingRow, { paddingVertical: 12 }]}>
+                  <View style={[styles.settingIconWrapper, { backgroundColor: '#F0F9FF' }]}>
+                    <MaterialIcons name="notifications-active" size={20} color="#0284C7" />
+                  </View>
+                  <View style={styles.settingContent}>
+                    <Text style={styles.settingLabel}>Daily Health Reminder</Text>
+                    <Text style={[styles.settingValue, { fontSize: 13, color: '#64748B', marginTop: 2 }]}>
+                      Get notified daily at 8 PM
+                    </Text>
+                  </View>
+                  <Switch
+                    trackColor={{ false: '#E2E8F0', true: colors.primary }}
+                    thumbColor={'#FFFFFF'}
+                    onValueChange={toggleReminder}
+                    value={isReminderEnabled}
+                  />
+                </View>
+              </View>
+            </Animated.View>
+
+            <Animated.View entering={FadeInDown.delay(500).duration(400)} style={styles.sectionGroup}>
+              <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.8}>
+                <MaterialIcons name="logout" size={20} color="#EF4444" />
+                <Text style={styles.logoutBtnText}>Sign Out</Text>
+              </TouchableOpacity>
+            </Animated.View>
+
+          </KeyboardAvoidingView>
+
+        </View>
+      </ScrollView>
+
+      <DateTimePickerModal
+        isVisible={isDatePickerVisible}
+        mode="date"
+        date={formData.dateOfBirth ? new Date(formData.dateOfBirth) : new Date()}
+        onConfirm={(date) => {
+          setDatePickerVisibility(false);
+          const formatted = date.toISOString().split('T')[0];
+          setFormData({ ...formData, dateOfBirth: formatted });
+        }}
+        onCancel={() => setDatePickerVisibility(false)}
+      />
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
+  root: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAFC',
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  headerBackground: {
+    height: 180,
+    width: '100%',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   appBar: {
     flexDirection: 'row',
@@ -318,190 +392,244 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors['outline-variant'],
   },
   appBarTitle: {
     ...typography.headlineSm,
-    color: colors['on-surface'],
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   iconButton: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 24,
   },
-  editButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: colors['primary-container'],
+  mainContent: {
+    paddingHorizontal: 20,
+    marginTop: -70, // Overlap the header
   },
-  editButtonText: {
-    ...typography.labelLg,
-    color: colors['on-primary-container'],
-  },
-  content: {
-    padding: spacing.marginMobile,
-    paddingBottom: 40,
-  },
-  header: {
+  avatarContainer: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 20,
   },
   avatarWrapper: {
     position: 'relative',
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  avatarImage: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+  },
+  avatarFallback: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
     backgroundColor: colors.primary,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
   avatarText: {
-    fontSize: 36,
+    fontSize: 40,
     fontWeight: '800',
-    color: colors['on-primary'],
+    color: '#FFFFFF',
   },
   editAvatarBadge: {
     position: 'absolute',
     bottom: 0,
     right: 0,
     backgroundColor: colors.primary,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: colors.surface,
-  },
-  name: {
-    ...typography.headlineMd,
-    color: colors['on-background'],
-    fontWeight: '800',
-  },
-  email: {
-    ...typography.bodyMd,
-    color: colors['on-surface-variant'],
-    marginTop: 4,
-  },
-  sectionCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: colors['surface-variant'],
+    borderColor: '#FFFFFF',
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
-  sectionTitle: {
-    ...typography.labelLg,
-    color: colors['on-surface-variant'],
-    marginBottom: 16,
-    textTransform: 'uppercase',
+  userName: {
+    ...typography.headlineMd,
+    color: '#0F172A',
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  tierBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  tierBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 4,
     letterSpacing: 0.5,
   },
-  fieldContainer: {
+  statsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'space-between',
+    marginBottom: 24,
+    gap: 16,
   },
-  fab: {
-    position: 'absolute',
-    bottom: 32,
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.27,
-    shadowRadius: 4.65,
-  },
-  fieldIconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors['secondary-container'],
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  fieldContent: {
+  statCard: {
     flex: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: colors['surface-variant'],
-    paddingBottom: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  fieldLabel: {
-    ...typography.labelMd,
-    color: colors['on-surface-variant'],
-    marginBottom: 4,
+  statIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  fieldValue: {
-    ...typography.bodyLg,
-    color: colors['on-surface'],
+  statValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#0F172A',
   },
-  fieldInput: {
-    ...typography.bodyLg,
-    color: colors['on-surface'],
-    padding: 0,
-    margin: 0,
+  statLabel: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
+    marginTop: 2,
   },
-  actionRow: {
+  editProfileBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0F172A',
+    paddingVertical: 14,
+    borderRadius: 16,
+    marginBottom: 24,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  logoutText: {
-    ...typography.bodyLg,
-    color: colors.error,
-    fontWeight: '600',
+  editProfileBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  editActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  cancelBtn: {
+    flex: 1,
+    backgroundColor: '#E2E8F0',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  saveBtn: {
+    flex: 2,
+    backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+  },
+  sectionGroup: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#94A3B8',
+    marginLeft: 16,
+    marginBottom: 8,
+    letterSpacing: 1,
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
   },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 14,
   },
-  settingInfo: {
-    flexDirection: 'row',
+  settingIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
     alignItems: 'center',
-    flex: 1,
-    paddingRight: 16,
+    marginRight: 12,
   },
-  settingTexts: {
+  settingContent: {
     flex: 1,
+    justifyContent: 'center',
+  },
+  editingBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.primary,
+    paddingBottom: 2,
   },
   settingLabel: {
-    ...typography.bodyLg,
-    color: colors['on-surface'],
-    fontWeight: '600',
-    marginBottom: 4,
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+    marginBottom: 2,
   },
-  settingDescription: {
-    ...typography.bodySm,
-    color: colors['on-surface-variant'],
-    lineHeight: 18,
+  settingValue: {
+    fontSize: 16,
+    color: '#0F172A',
+    fontWeight: '600',
+  },
+  settingInput: {
+    fontSize: 16,
+    color: '#0F172A',
+    fontWeight: '600',
+    padding: 0,
+    margin: 0,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginLeft: 48,
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FEF2F2',
+    paddingVertical: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  logoutBtnText: {
+    color: '#EF4444',
+    fontWeight: '700',
+    fontSize: 16,
+    marginLeft: 8,
   },
 });
