@@ -25,14 +25,15 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
 
   useEffect(() => {
     if (isFocused) {
-      fetchReports();
+      handleSearch();
     }
-  }, [isFocused, activeChip, searchQuery]);
+  }, [isFocused]);
 
-  const fetchReports = async () => {
+  const handleSearch = async (chip?: string) => {
     setLoading(true);
     try {
-      const res = await getDocuments();
+      const currentChip = chip !== undefined ? chip : activeChip;
+      const res = await getDocuments(0, 50, searchQuery, currentChip === 'All' ? undefined : currentChip);
       setReports(res.data.content || []);
     } catch (err) {
       console.log('Error fetching reports', err);
@@ -58,13 +59,17 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <MaterialIcons name="search" size={24} color={colors.outline} style={styles.searchIcon} />
+          <TouchableOpacity onPress={() => handleSearch()}>
+            <MaterialIcons name="search" size={24} color={colors.outline} style={styles.searchIcon} />
+          </TouchableOpacity>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by report name or date"
+            placeholder="Search inside reports..."
             placeholderTextColor={colors.outline}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            returnKeyType="search"
+            onSubmitEditing={() => handleSearch()}
           />
         </View>
 
@@ -76,7 +81,10 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
                 key={chip}
                 style={[styles.chip, activeChip === chip && styles.chipActive]}
                 activeOpacity={0.8}
-                onPress={() => setActiveChip(chip)}
+                onPress={() => {
+                  setActiveChip(chip);
+                  handleSearch(chip);
+                }}
               >
                 <Text style={[styles.chipText, activeChip === chip && styles.chipTextActive]}>{chip}</Text>
               </TouchableOpacity>
@@ -95,7 +103,7 @@ export const MyReportsScreen: React.FC<Props> = ({ navigation }) => {
           ) : reports.length === 0 ? (
             <EmptyState
               title="No Reports Found"
-              description="We couldn't find any medical reports matching your filters."
+              description="We couldn't find any medical reports matching your search."
               icon={Files}
               actionLabel="Add Report"
               onAction={() => navigation.navigate('AddReport')}

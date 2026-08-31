@@ -23,6 +23,7 @@ import { PremiumTextInput } from '../components/common/PremiumTextInput';
 import { MedicalBackground } from '../components/common/MedicalBackground';
 import { AnimatedAuthHeading } from '../components/common/AnimatedAuthHeading';
 import { MedivaLogo } from '../components/common/MedivaLogo';
+import Toast from 'react-native-toast-message';
 
 export const RegisterScreen = ({ navigation }: any) => {
   const [firstName, setFirstName] = useState('');
@@ -41,6 +42,12 @@ export const RegisterScreen = ({ navigation }: any) => {
 
     try {
       await register(firstName, lastName, email, password);
+      Toast.show({
+        type: 'info',
+        text1: 'Account Created',
+        text2: 'Please verify your email.',
+        position: 'top',
+      });
       setShowOtpModal(true);
     } catch (err: any) {
       Alert.alert('Registration Failed', getUserFriendlyErrorMessage(err));
@@ -53,6 +60,12 @@ export const RegisterScreen = ({ navigation }: any) => {
       await verifyRegistration(email, otpCode);
       setShowOtpModal(false);
       await login(email, password);
+      Toast.show({
+        type: 'success',
+        text1: 'Welcome to Mediva!',
+        text2: 'Thanks for joining us.',
+        position: 'top',
+      });
     } catch (err: any) {
       Alert.alert('Verification Failed', getUserFriendlyErrorMessage(err));
     }

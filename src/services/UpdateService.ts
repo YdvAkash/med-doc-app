@@ -15,12 +15,9 @@ interface GitHubRelease {
 }
 
 export class UpdateService {
-  /**
-   * Checks if latestVersion is newer than currentVersion.
-   */
   private static isNewerVersion(currentVersion: string, latestVersion: string): boolean {
-    if (currentVersion === 'dev') {
-      return false; // Disable update prompts for local development
+    if (__DEV__) {
+      return false; // Automatically disable update prompts for local development!
     }
     // If the current version is different from the latest GitHub release, an update is available.
     return currentVersion !== latestVersion;
@@ -36,10 +33,15 @@ export class UpdateService {
     }
 
     try {
-      const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
+      const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'Med-Doc-App'
+        }
+      });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch release info');
+        throw new Error('Failed to fetch release info: ' + response.status);
       }
 
       const release: GitHubRelease = await response.json();
