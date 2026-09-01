@@ -14,13 +14,53 @@ interface GitHubRelease {
   }[];
 }
 
+export type UpdateState = 
+  | 'IDLE' 
+  | 'CHECKING' 
+  | 'UPDATE_AVAILABLE' 
+  | 'DOWNLOADING' 
+  | 'DOWNLOAD_COMPLETE' 
+  | 'PREPARING_INSTALL' 
+  | 'OPENING_INSTALLER'
+  | 'DOWNLOAD_FAILED';
+
+export type UpdateListener = (state: UpdateState, progress?: number, version?: string) => void;
+
 export class UpdateService {
-  private static isNewerVersion(currentVersion: string, latestVersion: string): boolean {
+  private static listener: UpdateListener | null = null;
+  private static latestApkUrl: string | null = null;
+  private static latestVersionName: string | null = null;
+
+  static setListener(listener: UpdateListener | null) {
+    this.listener = listener;
+  }
+
+  private static notify(state: UpdateState, progress: number = 0, version?: string) {
+    if (this.listener) {
+      this.listener(state, progress, version || this.latestVersionName || undefined);
+    }
+  }
+
+  static isNewerVersion(currentVersion: string, latestVersion: string): boolean {
     if (__DEV__) {
       return false; // Automatically disable update prompts for local development!
     }
-    // If the current version is different from the latest GitHub release, an update is available.
-    return currentVersion !== latestVersion;
+    
+    // Clean versions to only contain numbers and dots
+    const cleanCurrent = currentVersion.replace(/[^0-9.]/g, '');
+    const cleanLatest = latestVersion.replace(/[^0-9.]/g, '');
+    
+    const v1Parts = cleanCurrent.split('.').map(Number);
+    const v2Parts = cleanLatest.split('.').map(Number);
+    
+    const len = Math.max(v1Parts.length, v2Parts.length);
+    for (let i = 0; i < len; i++) {
+      const n1 = v1Parts[i] || 0;
+      const n2 = v2Parts[i] || 0;
+      if (n2 > n1) return true;
+      if (n2 < n1) return false;
+    }
+    return false;
   }
 
   /**
@@ -33,6 +73,7 @@ export class UpdateService {
     }
 
     try {
+      this.notify('CHECKING');
       const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
@@ -53,22 +94,20 @@ export class UpdateService {
         const apkAsset = release.assets.find(asset => asset.name.endsWith('.apk'));
 
         if (apkAsset) {
-          Alert.alert(
-            'Update Available',
-            `A new version (${latestVersion}) is available. Would you like to update now?`,
-            [
-              { text: 'Later', style: 'cancel' },
-              { text: 'Update', onPress: () => this.downloadAndInstallUpdate(apkAsset.browser_download_url) }
-            ]
-          );
+          this.latestApkUrl = apkAsset.browser_download_url;
+          this.latestVersionName = latestVersion;
+          this.notify('UPDATE_AVAILABLE', 0, latestVersion);
         } else {
+          this.notify('IDLE');
           if (!silent) Alert.alert('Update', 'New version found, but no APK is attached to the release.');
         }
       } else {
+        this.notify('IDLE');
         if (!silent) Alert.alert('Up to date', 'You are using the latest version of the app.');
       }
     } catch (error) {
       console.error('Check update error:', error);
+      this.notify('IDLE');
       if (!silent) Alert.alert('Error', 'Failed to check for updates. Please try again later.');
     }
   }
@@ -76,32 +115,74 @@ export class UpdateService {
   /**
    * Downloads and installs the APK.
    */
-  private static async downloadAndInstallUpdate(apkUrl: string) {
+  static async startDownloadAndInstall() {
+    if (!this.latestApkUrl) return;
+
     try {
-      // 1. Download the APK
-      const downloadRes = await FileSystem.downloadAsync(
-        apkUrl,
-        FileSystem.documentDirectory + 'app-update.apk'
+      this.notify('DOWNLOADING', 0);
+      
+      const apkPath = FileSystem.documentDirectory + 'app-update.apk';
+
+      // Ensure the old apk is removed before downloading a new one to avoid any conflicts
+      const fileInfo = await FileSystem.getInfoAsync(apkPath);
+      if (fileInfo.exists) {
+         await FileSystem.deleteAsync(apkPath, { idempotent: true });
+      }
+
+      const downloadResumable = FileSystem.createDownloadResumable(
+        this.latestApkUrl,
+        apkPath,
+        {},
+        (downloadProgress) => {
+          const progress = downloadProgress.totalBytesExpectedToWrite > 0 
+            ? downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite
+            : 0;
+          this.notify('DOWNLOADING', progress);
+        }
       );
 
-      if (downloadRes.status !== 200) {
+      const downloadRes = await downloadResumable.downloadAsync();
+
+      if (!downloadRes || downloadRes.status !== 200) {
         throw new Error('Failed to download update');
       }
 
+      this.notify('DOWNLOAD_COMPLETE');
+      
+      // Artificial delay to show "Download complete" before preparing
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      this.notify('PREPARING_INSTALL');
+      
       const uri = downloadRes.uri;
 
-      // 2. Convert to content:// URI so the package installer can read it
+      // Convert to content:// URI so the package installer can read it
       const contentUri = await FileSystem.getContentUriAsync(uri);
 
-      // 3. Launch the Android installer
+      this.notify('OPENING_INSTALLER');
+      
+      // Artificial delay to show opening installer state
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Launch the Android installer
       await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
         data: contentUri,
         flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
         type: 'application/vnd.android.package-archive',
       });
+      
+      // Set idle after a long timeout so modal closes if user returns
+      setTimeout(() => {
+         this.notify('IDLE');
+      }, 5000);
+
     } catch (error) {
       console.error('Install update error:', error);
-      Alert.alert('Error', 'Failed to download or install the update.');
+      this.notify('DOWNLOAD_FAILED');
     }
+  }
+
+  static dismissUpdate() {
+    this.notify('IDLE');
   }
 }
