@@ -62,11 +62,6 @@ const MainTabs = () => {
         component={ProfileScreen}
         options={{ title: 'Profile' }}
       />
-      <Tab.Screen
-        name="ReferralTab"
-        component={ReferralScreen}
-        options={{ title: 'Refer' }}
-      />
     </Tab.Navigator>
   );
 };

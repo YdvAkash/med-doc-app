@@ -51,7 +51,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
       true
     );
   }, []);
-  
+
   const animatedReferStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseScale.value }]
   }));
@@ -89,7 +89,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
     <LinearGradient colors={[colors.primaryLight, colors.background]} style={styles.container}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-        
+
         {/* Ad Banner Overlay (Sticky at top, but pushed down slightly to not overlap status bar) */}
         {(!user?.subscriptionTier || user?.subscriptionTier === 'FREE') && (
           <View style={styles.stickyAdContainer}>
@@ -129,7 +129,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
 
           {/* Upgrade Card (Show if not Pro) */}
           {(user?.subscriptionTier !== 'PRO') && (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.upgradeBanner}
               onPress={() => navigation.navigate('Subscription')}
             >
@@ -159,10 +159,10 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
 
           {/* Quick Actions Grid */}
           <View style={styles.grid}>
-            {/* Take Photo */}
-            <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('AddReport')}>
-              <MaterialIcons name="photo-camera" size={36} color={colors.primary} style={{ marginBottom: 12 }} />
-              <Text style={styles.gridItemText}>Take Photo</Text>
+            {/* Refer */}
+            <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('Referral')}>
+              <MaterialIcons name="card-giftcard" size={36} color={colors.primary} style={{ marginBottom: 12 }} />
+              <Text style={styles.gridItemText}>Refer & Earn</Text>
             </TouchableOpacity>
 
             {/* Choose Report */}
