@@ -22,7 +22,7 @@ import { AnimatedButton } from '../components/common/AnimatedButton';
 import { LinearGradient } from 'expo-linear-gradient';
 import EmptyState from '../components/EmptyState';
 import { FileSearch } from 'lucide-react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, withRepeat, withSequence, withTiming, Easing, useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import { AnimatedHeaderBackground } from '../components/common/AnimatedHeaderBackground';
 import { MedivaLogo } from '../components/common/MedivaLogo';
 import { StartIoBanner } from '../../modules/expo-startio';
@@ -39,6 +39,22 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [recentReports, setRecentReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const isFocused = useIsFocused();
+
+  const pulseScale = useSharedValue(1);
+  useEffect(() => {
+    pulseScale.value = withRepeat(
+      withSequence(
+        withTiming(1.03, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    );
+  }, []);
+  
+  const animatedReferStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }]
+  }));
 
   useEffect(() => {
     if (isFocused) {
@@ -140,8 +156,6 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
             onPress={() => navigation.navigate('AddReport')}
             style={styles.primaryButton}
           />
-
-
 
           {/* Quick Actions Grid */}
           <View style={styles.grid}>

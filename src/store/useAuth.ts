@@ -17,6 +17,8 @@ interface User {
   bloodGroup?: string;
   dateOfBirth?: string;
   profilePictureUrl?: string;
+  myReferralCode?: string;
+  credits?: number;
 }
 
 interface AuthState {
@@ -26,7 +28,7 @@ interface AuthState {
   isInitialized: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
+  register: (firstName: string, lastName: string, email: string, password: string, referralCode?: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   fetchProfile: () => Promise<void>;
@@ -67,10 +69,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       throw error;
     }
   },
-  register: async (firstName, lastName, email, password) => {
+  register: async (firstName, lastName, email, password, referralCode) => {
     set({ isLoading: true });
     try {
-      await registerUser({ firstName, lastName, email, password });
+      await registerUser({ firstName, lastName, email, password, referralCode });
       
       // Auto-login is removed because the user needs to verify OTP first.
       set({ isLoading: false });

@@ -315,6 +315,28 @@ export const ProfileScreen = ({ navigation }: any) => {
               </View>
             </Animated.View>
 
+            <Animated.View entering={FadeInDown.delay(350).duration(400)} style={styles.sectionGroup}>
+              <Text style={styles.sectionHeader}>REWARDS</Text>
+              <View style={styles.card}>
+                <TouchableOpacity 
+                  style={[styles.settingRow, { paddingVertical: 16 }]} 
+                  onPress={() => navigation.navigate('Referral')}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.settingIconWrapper, { backgroundColor: '#FEF3C7' }]}>
+                    <MaterialIcons name="card-giftcard" size={20} color="#D97706" />
+                  </View>
+                  <View style={styles.settingContent}>
+                    <Text style={[styles.settingLabel, { color: '#0F172A', fontWeight: '600' }]}>Refer & Earn</Text>
+                    <Text style={[styles.settingValue, { fontSize: 13, color: '#D97706', marginTop: 2 }]}>
+                      Earn credits by inviting friends
+                    </Text>
+                  </View>
+                  <MaterialIcons name="chevron-right" size={20} color="#CBD5E1" />
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+
             <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.sectionGroup}>
               <Text style={styles.sectionHeader}>PREFERENCES</Text>
               <View style={styles.card}>

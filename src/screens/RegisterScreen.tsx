@@ -30,6 +30,7 @@ export const RegisterScreen = ({ navigation }: any) => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [showOtpModal, setShowOtpModal] = useState(false);
 
   const { register, login, isLoading } = useAuthStore();
@@ -41,7 +42,7 @@ export const RegisterScreen = ({ navigation }: any) => {
     }
 
     try {
-      await register(firstName, lastName, email, password);
+      await register(firstName, lastName, email, password, referralCode);
       Toast.show({
         type: 'info',
         text1: 'Account Created',
@@ -127,6 +128,14 @@ export const RegisterScreen = ({ navigation }: any) => {
               value={password}
               onChangeText={setPassword}
               isPassword={true}
+            />
+
+            <PremiumTextInput
+              icon="card-giftcard"
+              placeholder="Referral Code (Optional)"
+              value={referralCode}
+              onChangeText={setReferralCode}
+              autoCapitalize="characters"
             />
 
             <TouchableOpacity

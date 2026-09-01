@@ -46,21 +46,8 @@ export class UpdateService {
       return false; // Automatically disable update prompts for local development!
     }
     
-    // Clean versions to only contain numbers and dots
-    const cleanCurrent = currentVersion.replace(/[^0-9.]/g, '');
-    const cleanLatest = latestVersion.replace(/[^0-9.]/g, '');
-    
-    const v1Parts = cleanCurrent.split('.').map(Number);
-    const v2Parts = cleanLatest.split('.').map(Number);
-    
-    const len = Math.max(v1Parts.length, v2Parts.length);
-    for (let i = 0; i < len; i++) {
-      const n1 = v1Parts[i] || 0;
-      const n2 = v2Parts[i] || 0;
-      if (n2 > n1) return true;
-      if (n2 < n1) return false;
-    }
-    return false;
+    // If the current version is different from the latest GitHub release, an update is available.
+    return currentVersion !== latestVersion;
   }
 
   /**

@@ -168,3 +168,13 @@ export const updatePushToken = async (token: string) => {
   const response = await api.put('/auth/profile/push-token', { token });
   return response.data;
 };
+
+export const getReferralStats = async () => {
+  const response = await api.get('/referrals/me');
+  return response.data;
+};
+
+export const getReferralHistory = async (page = 0, size = 20) => {
+  const response = await api.get(`/referrals/history?page=${page}&size=${size}`);
+  return response.data;
+};
