@@ -48,13 +48,6 @@ jobs:
         run: |
           echo "$FIREBASE_JSON" > google-services.json
 
-      - name: Prebuild Expo project
-        run: npx expo prebuild --clean
-
-      - name: Build APK
-        working-directory: android
-        run: ./gradlew assembleRelease
-
       - name: Generate Release Tag
         id: generate_tag
         run: |
@@ -63,6 +56,15 @@ jobs:
       - name: Inject Version
         run: |
           echo "export const APP_VERSION = '${{ env.TAG_NAME }}';" > src/version.ts
+
+      - name: Prebuild Expo project
+        run: npx expo prebuild --clean
+
+      - name: Build APK
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
