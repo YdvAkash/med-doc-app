@@ -62,12 +62,18 @@ const MainTabs = () => {
         component={ProfileScreen}
         options={{ title: 'Profile' }}
       />
+      <Tab.Screen
+        name="ReferralTab"
+        component={ReferralScreen}
+        options={{ title: 'Refer' }}
+      />
     </Tab.Navigator>
   );
 };
 
 import { LoginSuccessOverlay } from '../components/common/LoginSuccessOverlay';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen';
+import { ReferralScreen } from '../screens/ReferralScreen';
 
 export const AppNavigator = () => {
   const { token, isInitialized, checkAuth } = useAuthStore();
@@ -106,6 +112,7 @@ export const AppNavigator = () => {
               <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
               <Stack.Screen name="Documents" component={DocumentsScreen} />
               <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+              <Stack.Screen name="Referral" component={ReferralScreen} />
             </>
           )}
         </Stack.Navigator>
