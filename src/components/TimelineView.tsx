@@ -100,11 +100,14 @@ export const TimelineView: React.FC<Props> = ({ ListHeaderComponent }) => {
       )}
       renderItem={({ item }) => {
         const retro = isRetroactive(item.eventDate, item.document?.uploadDate);
+        const dayOfMonth = new Date(item.eventDate || item.document?.uploadDate || new Date()).getDate();
         return (
           <View style={styles.timelineItem}>
             {/* Timeline Line & Dot */}
             <View style={styles.timelineLineContainer}>
-              <View style={[styles.timelineDot, retro && styles.timelineDotRetro]} />
+              <View style={[styles.timelineDot, retro && styles.timelineDotRetro]}>
+                <Text style={styles.timelineDateText}>{dayOfMonth}</Text>
+              </View>
               <View style={styles.timelineLine} />
             </View>
 
@@ -155,20 +158,27 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   timelineLineContainer: {
-    width: 24,
+    width: 28,
     alignItems: 'center',
     marginRight: 16,
   },
   timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: colors.primary,
     marginTop: 6,
     zIndex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   timelineDotRetro: {
     backgroundColor: colors.error,
+  },
+  timelineDateText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   timelineLine: {
     flex: 1,

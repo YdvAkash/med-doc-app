@@ -29,6 +29,8 @@ const TabIcon = ({ name, focused, color }: { name: any, focused: boolean, color:
   return <MaterialIcons name={name} size={24} color={color} />;
 };
 
+const DummyComponent = () => null;
+
 const MainTabs = () => {
   return (
     <Tab.Navigator
@@ -43,14 +45,14 @@ const MainTabs = () => {
         options={{ title: 'Home' }}
       />
       <Tab.Screen
-        name="ReportsTab"
-        component={MyReportsScreen}
-        options={{ title: 'Reports' }}
-      />
-      <Tab.Screen
         name="HealthTab"
         component={HealthDashboardScreen}
         options={{ title: 'Health' }}
+      />
+      <Tab.Screen
+        name="AddDocumentTab"
+        component={DummyComponent}
+        options={{ title: 'Add' }}
       />
       <Tab.Screen
         name="AskTab"
@@ -61,6 +63,11 @@ const MainTabs = () => {
         name="ProfileTab"
         component={ProfileScreen}
         options={{ title: 'Profile' }}
+      />
+      <Tab.Screen
+        name="ReportsTab"
+        component={MyReportsScreen}
+        options={{ title: 'Reports' }}
       />
     </Tab.Navigator>
   );

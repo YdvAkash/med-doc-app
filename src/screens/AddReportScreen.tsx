@@ -25,8 +25,11 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [manualDate, setManualDate] = useState<string>('');
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [isPicking, setIsPicking] = useState(false);
 
   const handleDocumentSelection = async () => {
+    if (isPicking) return;
+    setIsPicking(true);
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: ['application/pdf', 'image/jpeg', 'image/png'],
@@ -39,10 +42,14 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
       }
     } catch (err) {
       console.log('Error selecting document', err);
+    } finally {
+      setIsPicking(false);
     }
   };
 
   const handleImageSelection = async (useCamera: boolean) => {
+    if (isPicking) return;
+    setIsPicking(true);
     try {
       let result;
       if (useCamera) {
@@ -69,6 +76,8 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
       }
     } catch (err) {
       console.log('Error picking image', err);
+    } finally {
+      setIsPicking(false);
     }
   };
 
@@ -169,62 +178,131 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          
+          {/* Custom Header with Back Button and Question Mark */}
+          <View style={styles.topBar}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconCircle}>
+              <MaterialIcons name="arrow-back" size={22} color="#1F2937" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconCircle}>
+              <MaterialIcons name="help-outline" size={22} color="#1F2937" />
+            </TouchableOpacity>
+          </View>
 
-
-
-      {/* Main Content */}
-      <View style={styles.content}>
-        <View style={styles.headerText}>
-          <Text style={styles.title}>Add Medical Report</Text>
-          <Text style={styles.subtitle}>Take a photo or choose a file.</Text>
-        </View>
-
-        <View style={styles.optionsStack}>
-          {/* Option 1 */}
-          <TouchableOpacity style={styles.optionCard} activeOpacity={0.8} onPress={() => handleImageSelection(true)}>
-            <View style={styles.cardInner}>
-              <View style={[styles.iconWrapper, { backgroundColor: colors['secondary-container'] }]}>
-                <MaterialIcons name="photo-camera" size={28} color={colors.primary} />
-              </View>
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionTitle}>Take Photo</Text>
-                <Text style={styles.optionSubtitle}>Use your camera</Text>
-              </View>
-              <MaterialIcons name="chevron-right" size={24} color={colors['on-surface-variant']} />
+          {/* Header Texts */}
+          <View style={styles.headerText}>
+            <View style={{ flex: 1, paddingRight: 20 }}>
+              <Text style={styles.title}>Add Medical Report</Text>
+              <Text style={styles.subtitle}>Upload your reports, prescriptions, lab tests or scans to keep everything organized.</Text>
             </View>
-          </TouchableOpacity>
+          </View>
 
-          {/* Option 2 */}
-          <TouchableOpacity style={styles.optionCard} activeOpacity={0.8} onPress={() => handleImageSelection(false)}>
-            <View style={styles.cardInner}>
-              <View style={[styles.iconWrapper, { backgroundColor: colors['tertiary-container'] }]}>
-                <MaterialIcons name="image" size={28} color={colors.tertiary} />
-              </View>
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionTitle}>Choose from Gallery</Text>
-                <Text style={styles.optionSubtitle}>Select a report photo</Text>
-              </View>
-              <MaterialIcons name="chevron-right" size={24} color={colors['on-surface-variant']} />
+          {/* Security Banner */}
+          <View style={styles.securityBanner}>
+            <View style={styles.securityIconBox}>
+              <MaterialIcons name="security" size={20} color="#3B82F6" />
             </View>
-          </TouchableOpacity>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.securityTitle}>Your data is private & secure</Text>
+              <Text style={styles.securitySubtitle}>We ensure complete confidentiality of your health data.</Text>
+            </View>
+            <MaterialIcons name="keyboard-arrow-down" size={24} color="#94A3B8" />
+          </View>
 
-          {/* Option 3 */}
-          <TouchableOpacity style={styles.optionCard} activeOpacity={0.8} onPress={handleDocumentSelection}>
-            <View style={styles.cardInner}>
-              <View style={[styles.iconWrapper, { backgroundColor: colors['primary-container'] }]}>
-                <MaterialIcons name="picture-as-pdf" size={28} color={colors['on-primary-container']} />
+          <Text style={styles.sectionHeader}>Upload a Report</Text>
+
+          <View style={styles.optionsStack}>
+            {/* Option 1: Take Photo */}
+            <TouchableOpacity style={[styles.optionCard, { borderLeftColor: '#3B82F6' }]} activeOpacity={0.8} onPress={() => handleImageSelection(true)}>
+              <View style={styles.cardInner}>
+                <View style={[styles.iconWrapper, { backgroundColor: '#EFF6FF' }]}>
+                  <MaterialIcons name="photo-camera" size={28} color="#3B82F6" />
+                </View>
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionTitle}>Take a Photo</Text>
+                  <Text style={styles.optionSubtitle}>Use your camera to capture the report</Text>
+                </View>
+                <View style={[styles.arrowCircle, { backgroundColor: '#EFF6FF' }]}>
+                  <MaterialIcons name="chevron-right" size={20} color="#3B82F6" />
+                </View>
               </View>
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionTitle}>Choose PDF</Text>
-                <Text style={styles.optionSubtitle}>Select a PDF report</Text>
+            </TouchableOpacity>
+
+            {/* Option 2: Gallery */}
+            <TouchableOpacity style={[styles.optionCard, { borderLeftColor: '#EC4899' }]} activeOpacity={0.8} onPress={() => handleImageSelection(false)}>
+              <View style={styles.cardInner}>
+                <View style={[styles.iconWrapper, { backgroundColor: '#FDF2F8' }]}>
+                  <MaterialIcons name="image" size={28} color="#EC4899" />
+                </View>
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionTitle}>Choose from Gallery</Text>
+                  <Text style={styles.optionSubtitle}>Select an image from your phone gallery</Text>
+                </View>
+                <View style={[styles.arrowCircle, { backgroundColor: '#FDF2F8' }]}>
+                  <MaterialIcons name="chevron-right" size={20} color="#EC4899" />
+                </View>
               </View>
-              <MaterialIcons name="chevron-right" size={24} color={colors['on-surface-variant']} />
+            </TouchableOpacity>
+
+            {/* Option 3: PDF */}
+            <TouchableOpacity style={[styles.optionCard, { borderLeftColor: '#10B981' }]} activeOpacity={0.8} onPress={handleDocumentSelection}>
+              <View style={styles.cardInner}>
+                <View style={[styles.iconWrapper, { backgroundColor: '#ECFDF5' }]}>
+                  <MaterialIcons name="picture-as-pdf" size={28} color="#10B981" />
+                </View>
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionTitle}>Choose PDF File</Text>
+                  <Text style={styles.optionSubtitle}>Upload a PDF file from your device</Text>
+                </View>
+                <View style={[styles.arrowCircle, { backgroundColor: '#ECFDF5' }]}>
+                  <MaterialIcons name="chevron-right" size={20} color="#10B981" />
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            {/* Option 4: Cloud */}
+            <TouchableOpacity style={[styles.optionCard, { borderLeftColor: '#8B5CF6' }]} activeOpacity={0.8} onPress={handleDocumentSelection}>
+              <View style={styles.cardInner}>
+                <View style={[styles.iconWrapper, { backgroundColor: '#F5F3FF' }]}>
+                  <MaterialIcons name="cloud-upload" size={28} color="#8B5CF6" />
+                </View>
+                <View style={styles.optionTextContainer}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={styles.optionTitle}>Upload from Cloud</Text>
+                    <View style={styles.newBadge}>
+                      <Text style={styles.newBadgeText}>New</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.optionSubtitle}>Import reports from Google Drive, Dropbox or OneDrive</Text>
+                </View>
+                <View style={[styles.arrowCircle, { backgroundColor: '#F5F3FF' }]}>
+                  <MaterialIcons name="chevron-right" size={20} color="#8B5CF6" />
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.supportedFormatsTitle}>Supported formats</Text>
+          <View style={styles.formatsRow}>
+            <View style={styles.formatTag}><MaterialIcons name="image" size={14} color="#3B82F6" style={{marginRight:6}}/><Text style={styles.formatText}>JPG</Text></View>
+            <View style={styles.formatTag}><MaterialIcons name="image" size={14} color="#10B981" style={{marginRight:6}}/><Text style={styles.formatText}>PNG</Text></View>
+            <View style={styles.formatTag}><MaterialIcons name="picture-as-pdf" size={14} color="#EC4899" style={{marginRight:6}}/><Text style={styles.formatText}>PDF</Text></View>
+            <View style={styles.formatTag}><MaterialIcons name="image" size={14} color="#8B5CF6" style={{marginRight:6}}/><Text style={styles.formatText}>HEIC</Text></View>
+          </View>
+
+          <View style={styles.footerBanner}>
+            <View style={styles.footerIcon}>
+              <MaterialIcons name="lock-outline" size={22} color="#8B5CF6" />
             </View>
-          </TouchableOpacity>
-        </View>
-      </View>
+            <Text style={styles.footerText}>All files are securely encrypted and stored in your account.</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
 
       {/* Upload & Processing Modal */}
       <Modal visible={uploadState === 'uploading' || uploadState === 'processing'} transparent animationType="fade">
@@ -316,95 +394,192 @@ export const AddReportScreen: React.FC<Props> = ({ navigation }) => {
         </SafeAreaView>
       </Modal>
 
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  appBar: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors['outline-variant'],
-  },
-  iconButton: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 24,
-  },
-  appBarTitle: {
-    ...typography.headlineSm,
-    color: colors.primary,
+    backgroundColor: '#FAFBFC', // Very light blue/gray background
   },
   content: {
-    flex: 1,
-    paddingHorizontal: spacing.marginMobile,
-    gap: spacing.stackLg,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 40,
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   headerText: {
-    gap: spacing.stackSm,
-    paddingTop: 16,
+    marginBottom: 24,
   },
   title: {
-    ...typography.headlineLgMobile,
-    color: colors['on-surface'],
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#0B1C3D',
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    ...typography.bodyLg,
-    color: colors['on-surface-variant'],
+    fontSize: 15,
+    color: '#64748B',
+    lineHeight: 22,
+  },
+  securityBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    marginBottom: 32,
+  },
+  securityIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#E0E7FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  securityTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#2563EB',
+    marginBottom: 2,
+  },
+  securitySubtitle: {
+    fontSize: 13,
+    color: '#64748B',
+  },
+  sectionHeader: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 16,
   },
   optionsStack: {
     gap: 16,
-    marginTop: 16,
   },
   optionCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors['outline-variant'],
-    overflow: 'hidden',
-    backgroundColor: colors['surface-container-lowest'],
+    borderLeftWidth: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
   },
   cardInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-    minHeight: 88,
+    padding: 18,
   },
   iconWrapper: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
   },
   optionTextContainer: {
     flex: 1,
-    justifyContent: 'center',
   },
   optionTitle: {
-    ...typography.headlineSm,
-    color: colors['on-surface'],
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 4,
   },
   optionSubtitle: {
-    ...typography.bodyMd,
-    color: colors['on-surface-variant'],
-    marginTop: 4,
+    fontSize: 13,
+    color: '#64748B',
+    paddingRight: 10,
+    lineHeight: 18,
+  },
+  arrowCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  newBadge: {
+    backgroundColor: '#F5F3FF',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 8,
+  },
+  newBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#8B5CF6',
+  },
+  supportedFormatsTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#64748B',
+    marginTop: 32,
+    marginBottom: 12,
+  },
+  formatsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  formatTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  formatText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  footerBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F3FF',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 32,
+  },
+  footerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#EDE9FE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  footerText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#4C1D95',
+    lineHeight: 20,
+    fontWeight: '500',
   },
   modalOverlay: {
     flex: 1,
