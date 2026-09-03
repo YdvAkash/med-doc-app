@@ -62,3 +62,4 @@ Download the latest or older versions of the app directly from our automated Git
 | v2026.09.01-ef32c4f | 2026-09-01 | [Download APK](https://github.com/YdvAkash/med-doc-app/releases/download/v2026.09.01-ef32c4f/app-release.apk) |
 | v2026.09.01-50faaed | 2026-09-01 | [Download APK](https://github.com/YdvAkash/med-doc-app/releases/download/v2026.09.01-50faaed/app-release.apk) |
 | v2026.09.01-1094eaf | 2026-09-01 | [Download APK](https://github.com/YdvAkash/med-doc-app/releases/download/v2026.09.01-1094eaf/app-release.apk) |
+| v2026.09.03-460cf24 | 2026-09-03 | [Download APK](https://github.com/YdvAkash/med-doc-app/releases/download/v2026.09.03-460cf24/app-release.apk) |
