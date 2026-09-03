@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated, ScrollView } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { colors, spacing, typography, shadows } from '../theme';
+import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
+import { FileText, Activity, Image as ImageIcon, MoreVertical, Pill, FlaskConical } from 'lucide-react-native';
 import { useHaptics } from '../hooks/useHaptics';
 
 interface DocumentCardProps {
@@ -9,6 +8,7 @@ interface DocumentCardProps {
   filename: string;
   title?: string;
   tags?: string[];
+  providerName?: string;
   date: string;
   category?: string;
   fileType?: string;
@@ -18,8 +18,8 @@ interface DocumentCardProps {
 export const DocumentCard: React.FC<DocumentCardProps> = ({
   filename,
   title,
-  tags,
   date,
+  providerName,
   category,
   fileType,
   onPress
@@ -27,15 +27,69 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
   const haptics = useHaptics();
   const scale = useRef(new Animated.Value(1)).current;
 
-  const getIconForType = (type?: string) => {
-    switch (type?.toLowerCase()) {
-      case 'pdf': return 'picture-as-pdf';
-      case 'png':
-      case 'jpg':
-      case 'jpeg': return 'image';
-      default: return 'description';
+  const getCategoryConfig = () => {
+    const c = (category || '').toUpperCase();
+    const t = (title || filename || '').toLowerCase();
+    
+    if (c === 'PRESCRIPTION' || t.includes('prescription')) {
+      return { Icon: Pill, color: '#A855F7', bg: '#F3E8FF', tagText: 'Prescription', tagColor: '#A855F7', tagBg: '#F3E8FF' };
+    }
+    if (c === 'LAB_TEST' || t.includes('blood count') || t.includes('cbc') || t.includes('test')) {
+      return { Icon: FlaskConical, color: '#F59E0B', bg: '#FFF7ED', tagText: 'Lab Test', tagColor: '#F59E0B', tagBg: '#FFF7ED' };
+    }
+    if (c === 'IMAGING' || t.includes('x-ray') || t.includes('scan') || t.includes('mri')) {
+      return { Icon: ImageIcon, color: '#1E293B', bg: '#F1F5F9', tagText: 'Imaging', tagColor: '#8B5CF6', tagBg: '#F3E8FF' };
+    }
+    if (t.includes('ecg') || t.includes('heart') || t.includes('pulse')) {
+      return { Icon: Activity, color: '#EF4444', bg: '#FEF2F2', tagText: 'Report', tagColor: '#EF4444', tagBg: '#FEF2F2' };
+    }
+    return { Icon: FileText, color: '#3B82F6', bg: '#EFF6FF', tagText: 'Report', tagColor: '#3B82F6', tagBg: '#EFF6FF' };
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return dateStr;
     }
   };
+
+  const config = getCategoryConfig();
+  const Icon = config.Icon;
+
+  const formatFallbackTitle = () => {
+    const c = (category || '').toUpperCase();
+    if (c === 'PRESCRIPTION') return 'Prescription';
+    if (c === 'LAB_TEST') return 'Lab Test';
+    if (c === 'IMAGING') return 'Medical Imaging';
+    if (c === 'REPORT') return 'Medical Report';
+    return 'Medical Document';
+  };
+
+  const isUglyFilename = (name: string) => {
+    if (!name) return true;
+    if (name.length > 20 && !name.includes(' ')) return true;
+    if (name.match(/[0-9a-f]{8}-[0-9a-f]{4}/i)) return true;
+    if (name.toUpperCase().startsWith('IMG_') || name.toUpperCase().startsWith('IMAGE_')) return true;
+    if (name.toUpperCase().startsWith('RN_IMAGE_PICKER')) return true;
+    return false;
+  };
+
+  const displayTitle = title 
+    ? title 
+    : (filename && !isUglyFilename(filename)) 
+      ? filename 
+      : formatFallbackTitle();
+  
+  // Format file extension for badge
+  const ext = (fileType || filename?.split('.').pop() || 'PDF').toUpperCase();
+  const badgeText = ext === 'APPLICATION/PDF' ? 'PDF' : ext.substring(0, 4);
+
+  const formattedDate = formatDate(date);
+  const subtitle = providerName ? `${formattedDate} • ${providerName}` : formattedDate;
 
   return (
     <Pressable
@@ -48,43 +102,25 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
       }}
       onPress={onPress}
     >
-      <Animated.View style={[styles.reportCard, { transform: [{ scale }] }]}>
-        <View style={styles.cardHeader}>
-          <View style={styles.iconWrapper}>
-            <MaterialIcons name={getIconForType(fileType)} size={28} color={colors.primary} />
-            <View style={styles.verifiedBadge}>
-              <MaterialIcons name="verified" size={14} color={colors.success} />
-            </View>
-          </View>
-          <View style={styles.cardHeaderText}>
-            <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">
-              {title || filename}
-            </Text>
-            <View style={styles.metaRow}>
-              <MaterialIcons name="event" size={14} color={colors['on-surface-variant']} />
-              <Text style={styles.cardDate}>{date}</Text>
-            </View>
+      <Animated.View style={[styles.card, { transform: [{ scale }] }]}>
+        <View style={[styles.iconContainer, { backgroundColor: config.bg }]}>
+          <Icon size={24} color={config.color} strokeWidth={2} />
+        </View>
+        
+        <View style={styles.textContainer}>
+          <Text style={styles.titleText} numberOfLines={1}>{displayTitle}</Text>
+          <Text style={styles.subtitleText} numberOfLines={1}>{subtitle}</Text>
+          
+          <View style={[styles.tag, { backgroundColor: config.tagBg }]}>
+            <Text style={[styles.tagText, { color: config.tagColor }]}>{config.tagText}</Text>
           </View>
         </View>
-        <View style={styles.cardFooter}>
-          <View style={styles.chipsScrollWrapper}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsContainer}>
-              {category && category.toLowerCase() !== 'general' && (
-                <View style={styles.chip}>
-                  <Text style={styles.cardTags}>{category}</Text>
-                </View>
-              )}
-              {tags && tags.map((tag, idx) => (
-                <View key={idx} style={[styles.chip, { backgroundColor: colors['secondary-container'] }]}>
-                  <Text style={[styles.cardTags, { color: colors['on-secondary-container'] }]}>{tag}</Text>
-                </View>
-              ))}
-            </ScrollView>
+        
+        <View style={styles.rightContainer}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{badgeText}</Text>
           </View>
-          <View style={styles.viewAction}>
-            <Text style={styles.viewText}>View</Text>
-            <MaterialIcons name="arrow-forward" size={18} color={colors.primary} />
-          </View>
+          <MoreVertical size={20} color="#94A3B8" />
         </View>
       </Animated.View>
     </Pressable>
@@ -92,97 +128,70 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  reportCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.stackMd,
-    ...shadows.md,
-    borderWidth: 1,
-    borderColor: colors['surface-variant'],
-    marginBottom: 12,
-  },
-  cardHeader: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.stackMd,
-    marginBottom: spacing.stackMd,
-  },
-  iconWrapper: {
-    width: 56,
-    height: 56,
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    backgroundColor: colors.primaryLight,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  iconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
+    marginRight: 16,
   },
-  verifiedBadge: {
-    position: 'absolute',
-    bottom: -4,
-    right: -4,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: 2,
-  },
-  cardHeaderText: {
+  textContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
-  cardTitle: {
-    ...typography.labelLg,
-    color: colors['on-surface'],
+  titleText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1F2937',
     marginBottom: 4,
   },
-  cardSubtitle: {
-    ...typography.bodyMd,
-    color: colors['on-surface-variant'],
-    marginBottom: 4,
+  subtitleText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 6,
   },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  cardDate: {
-    ...typography.Caption1,
-    color: colors.textSecondary,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.stackSm,
-    gap: spacing.stackMd,
-  },
-  chipsScrollWrapper: {
-    flex: 1,
-    marginRight: spacing.stackSm,
-  },
-  chipsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  chip: {
-    backgroundColor: colors.background,
+  tag: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.divider,
+    borderRadius: 6,
   },
-  cardTags: {
-    ...typography.Caption1,
-    color: colors.textSecondary,
-    textTransform: 'capitalize',
-    letterSpacing: 0.25,
+  tagText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
-  viewAction: {
+  rightContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
   },
-  viewText: {
-    ...typography.Button,
-    color: colors.primary,
+  badge: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#EF4444',
+  }
 });

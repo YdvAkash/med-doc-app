@@ -14,14 +14,15 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/useAuth';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, typography, spacing } from '../theme';
-import { getDocuments, getProfile } from '../services/api';
+import { getDocuments, getProfile, getDashboardStats } from '../services/api';
+import { Modal } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { DocumentCard } from '../components/DocumentCard';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { AnimatedButton } from '../components/common/AnimatedButton';
 import { LinearGradient } from 'expo-linear-gradient';
 import EmptyState from '../components/EmptyState';
-import { FileSearch } from 'lucide-react-native';
+import { FileSearch, FileText, Pill, FlaskConical, Image as ImageIcon } from 'lucide-react-native';
 import Animated, { FadeInDown, withRepeat, withSequence, withTiming, Easing, useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import { AnimatedHeaderBackground } from '../components/common/AnimatedHeaderBackground';
 import { MedivaLogo } from '../components/common/MedivaLogo';
@@ -37,7 +38,10 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const firstName = profile?.firstName || user?.firstName || user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
 
   const [recentReports, setRecentReports] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>({ REPORT: 0, LAB_TEST: 0, PRESCRIPTION: 0, IMAGING: 0 });
   const [loading, setLoading] = useState(true);
+  const [showProModal, setShowProModal] = useState(false);
+  const hasShownProModal = React.useRef(false);
   const isFocused = useIsFocused();
 
   const pulseScale = useSharedValue(1);
@@ -60,8 +64,30 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
     if (isFocused) {
       fetchRecentReports();
       fetchUserProfile();
+      fetchStats();
     }
   }, [isFocused]);
+
+  useEffect(() => {
+    if (user && (!user.subscriptionTier || user.subscriptionTier === 'FREE')) {
+      if (!hasShownProModal.current) {
+        // slight delay so it feels natural after splash
+        setTimeout(() => setShowProModal(true), 1000);
+        hasShownProModal.current = true;
+      }
+    }
+  }, [user]);
+
+  const fetchStats = async () => {
+    try {
+      const res = await getDashboardStats();
+      if (res && res.data) {
+        setStats(res.data);
+      }
+    } catch (err) {
+      console.log('Error fetching stats', err);
+    }
+  };
 
   const fetchUserProfile = async () => {
     try {
@@ -127,68 +153,71 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Upgrade Card (Show if not Pro) */}
-          {(user?.subscriptionTier !== 'PRO') && (
-            <TouchableOpacity
-              style={styles.upgradeBanner}
-              onPress={() => navigation.navigate('Subscription')}
+          {/* Analytics / Category Cards */}
+          {/* Analytics / Category Cards */}
+          <View style={styles.categoriesContainer}>
+            <TouchableOpacity 
+              style={[styles.categoryCard, { backgroundColor: '#F0F8F1' }]} 
+              onPress={() => navigation.navigate('ReportsTab', { categoryFilter: 'REPORT' })}
+              activeOpacity={0.8}
             >
-              <LinearGradient
-                colors={['#08A8C6', '#068A9F']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.upgradeBannerGradient}
-              >
-                <View style={styles.upgradeBannerContent}>
-                  <View>
-                    <Text style={styles.upgradeBannerTitle}>Upgrade to Pro</Text>
-                    <Text style={styles.upgradeBannerSub}>Get unlimited AI chats & uploads</Text>
-                  </View>
-                  <MaterialIcons name="arrow-forward-ios" size={16} color="#FFFFFF" />
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-          )}
-
-          {/* Primary Action Button */}
-          <AnimatedButton
-            title="Add Medical Report"
-            onPress={() => navigation.navigate('AddReport')}
-            style={styles.primaryButton}
-          />
-
-          {/* Quick Actions Grid */}
-          <View style={styles.grid}>
-            {/* Refer */}
-            <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('Referral')}>
-              <MaterialIcons name="card-giftcard" size={36} color={colors.primary} style={{ marginBottom: 12 }} />
-              <Text style={styles.gridItemText}>Refer & Earn</Text>
+              <View style={styles.categoryTextContainer}>
+                <Text style={[styles.categoryLabel, { color: '#1B2A3B' }]} numberOfLines={1} adjustsFontSizeToFit>Reports</Text>
+                <Text style={[styles.categoryCount, { color: '#1B2A3B' }]}>{stats.REPORT || 0}</Text>
+              </View>
+              <View style={[styles.categoryIconBg, { backgroundColor: '#E3F2E7' }]}>
+                <FileText size={24} color="#0DAA61" strokeWidth={2} />
+              </View>
             </TouchableOpacity>
 
-            {/* Choose Report */}
-            <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('AddReport')}>
-              <MaterialIcons name="folder" size={36} color={colors.primary} style={{ marginBottom: 12 }} />
-              <Text style={styles.gridItemText}>Choose Report</Text>
+            <TouchableOpacity 
+              style={[styles.categoryCard, { backgroundColor: '#F4F0FB' }]} 
+              onPress={() => navigation.navigate('ReportsTab', { categoryFilter: 'PRESCRIPTION' })}
+              activeOpacity={0.8}
+            >
+              <View style={styles.categoryTextContainer}>
+                <Text style={[styles.categoryLabel, { color: '#1B2A3B' }]} numberOfLines={1} adjustsFontSizeToFit>Prescriptions</Text>
+                <Text style={[styles.categoryCount, { color: '#1B2A3B' }]}>{stats.PRESCRIPTION || 0}</Text>
+              </View>
+              <View style={[styles.categoryIconBg, { backgroundColor: '#EAE2F6' }]}>
+                <Pill size={24} color="#8A4AF3" strokeWidth={2} />
+              </View>
             </TouchableOpacity>
 
-            {/* Ask About Reports */}
-            <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('AskTab')}>
-              <MaterialIcons name="chat-bubble-outline" size={36} color={colors.primary} style={{ marginBottom: 12 }} />
-              <Text style={styles.gridItemText}>Ask About Reports</Text>
+            <TouchableOpacity 
+              style={[styles.categoryCard, { backgroundColor: '#FFF5EF' }]} 
+              onPress={() => navigation.navigate('ReportsTab', { categoryFilter: 'LAB_TEST' })}
+              activeOpacity={0.8}
+            >
+              <View style={styles.categoryTextContainer}>
+                <Text style={[styles.categoryLabel, { color: '#1B2A3B' }]} numberOfLines={1} adjustsFontSizeToFit>Lab Tests</Text>
+                <Text style={[styles.categoryCount, { color: '#1B2A3B' }]}>{stats.LAB_TEST || 0}</Text>
+              </View>
+              <View style={[styles.categoryIconBg, { backgroundColor: '#FDE8DA' }]}>
+                <FlaskConical size={24} color="#F28E2B" strokeWidth={2} />
+              </View>
             </TouchableOpacity>
 
-            {/* View Health */}
-            <TouchableOpacity style={styles.gridItem} activeOpacity={0.8} onPress={() => navigation.navigate('HealthTab')}>
-              <MaterialIcons name="monitor-heart" size={36} color={colors.primary} style={{ marginBottom: 12 }} />
-              <Text style={styles.gridItemText}>View Health</Text>
+            <TouchableOpacity 
+              style={[styles.categoryCard, { backgroundColor: '#F0F6FF' }]} 
+              onPress={() => navigation.navigate('ReportsTab', { categoryFilter: 'IMAGING' })}
+              activeOpacity={0.8}
+            >
+              <View style={styles.categoryTextContainer}>
+                <Text style={[styles.categoryLabel, { color: '#1B2A3B' }]} numberOfLines={1} adjustsFontSizeToFit>Imaging</Text>
+                <Text style={[styles.categoryCount, { color: '#1B2A3B' }]}>{stats.IMAGING || 0}</Text>
+              </View>
+              <View style={[styles.categoryIconBg, { backgroundColor: '#E2EEFE' }]}>
+                <ImageIcon size={24} color="#257BFA" strokeWidth={2} />
+              </View>
             </TouchableOpacity>
           </View>
 
-          {/* Recent Reports Section */}
+          {/* Recent Records Section */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Reports</Text>
+            <Text style={styles.sectionTitle}>Recent Records</Text>
             <TouchableOpacity onPress={() => navigation.navigate('ReportsTab')}>
-              <Text style={styles.seeAllText}>See All</Text>
+              <Text style={styles.seeAllText}>View All</Text>
             </TouchableOpacity>
           </View>
 
@@ -215,6 +244,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
                   title={report.title}
                   tags={report.tags}
                   date={report.extractedEventDate || report.uploadDate?.split('T')[0]}
+                  providerName={report.providerName || (report.tags && report.tags.length > 0 ? report.tags[0] : undefined)}
                   category={report.category}
                   fileType={report.fileType}
                   onPress={() => navigation.navigate('ReportDetail', { id: report.id })}
@@ -225,6 +255,39 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
 
         </ScrollView>
       </SafeAreaView>
+
+      {/* Pro Upgrade App-Open Modal */}
+      <Modal
+        visible={showProModal}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <Animated.View style={styles.modalContent} entering={FadeInDown}>
+            <LinearGradient colors={['#08A8C6', '#068A9F']} style={styles.modalHeader}>
+              <MaterialIcons name="star" size={48} color="#FFF" />
+              <Text style={styles.modalTitle}>Upgrade to Mediva Pro</Text>
+            </LinearGradient>
+            <View style={styles.modalBody}>
+              <Text style={styles.modalDescription}>
+                Unlock unlimited document uploads, advanced AI categorization, and detailed health analytics with a Pro subscription.
+              </Text>
+              <AnimatedButton
+                title="View Plans"
+                onPress={() => {
+                  setShowProModal(false);
+                  navigation.navigate('Subscription');
+                }}
+                style={{ marginTop: 24 }}
+              />
+              <TouchableOpacity onPress={() => setShowProModal(false)} style={styles.modalCloseBtn}>
+                <Text style={styles.modalCloseText}>Maybe Later</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+
     </LinearGradient>
   );
 };
@@ -242,8 +305,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
-    padding: 16,
+    marginBottom: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 20,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
@@ -260,11 +324,11 @@ const styles = StyleSheet.create({
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
     backgroundColor: colors.primary + '15',
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 2,
     borderRadius: 12,
   },
   brandTextSmall: {
@@ -276,19 +340,21 @@ const styles = StyleSheet.create({
   },
   greeting: {
     ...typography.headlineMd,
+    fontSize: 22,
     color: colors['on-background'],
     fontWeight: '800',
     letterSpacing: -0.5,
   },
   subtitle: {
     ...typography.bodyMd,
+    fontSize: 13,
     color: colors['on-surface-variant'],
-    marginTop: 4,
+    marginTop: 2,
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: colors.primary + '10',
     justifyContent: 'center',
     alignItems: 'center',
@@ -449,33 +515,90 @@ const styles = StyleSheet.create({
     bottom: -20,
     transform: [{ rotate: '-15deg' }],
   },
-  upgradeBanner: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#08A8C6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+  greetingBgIcon: {
+    position: 'absolute',
+    right: -20,
+    bottom: -20,
+    transform: [{ rotate: '-15deg' }],
   },
-  upgradeBannerGradient: {
-    padding: 16,
-  },
-  upgradeBannerContent: {
+  categoriesContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 32,
+  },
+  categoryCard: {
+    width: '48%',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 18,
+    borderRadius: 16,
   },
-  upgradeBannerTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 2,
+  categoryIconBg: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  upgradeBannerSub: {
-    color: 'rgba(255,255,255,0.8)',
+  categoryTextContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingRight: 8,
+  },
+  categoryLabel: {
     fontSize: 13,
+    fontWeight: '400',
+    marginBottom: 4,
+  },
+  categoryCount: {
+    fontSize: 22,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    width: '100%',
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    ...typography.headlineMd,
+    color: '#FFF',
+    fontWeight: '800',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  modalBody: {
+    padding: 24,
+  },
+  modalDescription: {
+    ...typography.bodyLg,
+    color: colors['on-surface-variant'],
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  modalCloseBtn: {
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  modalCloseText: {
+    ...typography.labelLg,
+    color: colors['on-surface-variant'],
   }
 });

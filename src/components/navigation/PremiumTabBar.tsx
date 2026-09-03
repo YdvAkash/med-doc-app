@@ -52,10 +52,29 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarPr
           };
 
           let iconName: any = 'home';
-          if (route.name === 'ReportsTab') iconName = 'description';
+          if (route.name === 'ReportsTab') return null; // Hide from bottom bar
           if (route.name === 'HealthTab') iconName = 'monitor-heart';
           if (route.name === 'AskTab') iconName = 'smart-toy';
           if (route.name === 'ProfileTab') iconName = 'person';
+
+          if (route.name === 'AddDocumentTab') {
+            return (
+              <TouchableOpacity
+                key={route.key}
+                activeOpacity={0.8}
+                onPress={() => {
+                  haptics.light();
+                  navigation.navigate('AddReport');
+                }}
+                style={styles.fabContainer}
+              >
+                <View style={styles.fabInner}>
+                  <MaterialIcons name="add" size={32} color="#FFFFFF" />
+                </View>
+              </TouchableOpacity>
+            );
+          }
+
           return (
             <TabItem
               key={route.key}
@@ -155,5 +174,26 @@ const styles = StyleSheet.create({
     ...typography.Caption1,
     marginTop: 4,
     fontWeight: '500',
+  },
+  fabContainer: {
+    flex: 1,
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    top: -15, // pop out
+  },
+  fabInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#0055FF', // prominent bluish
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0055FF',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
   }
 });

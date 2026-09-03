@@ -50,11 +50,18 @@ export const uploadDocument = async (fileUri: string, mimeType: string, fileName
   return response.data;
 };
 
-export const getDocuments = async (page = 0, size = 20, search?: string, category?: string) => {
+export const getDocuments = async (page = 0, size = 20, search?: string, category?: string, startDate?: string, endDate?: string) => {
   let url = `/documents?page=${page}&size=${size}`;
   if (search) url += `&search=${encodeURIComponent(search)}`;
   if (category && category !== 'All') url += `&category=${encodeURIComponent(category)}`;
+  if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
+  if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
   const response = await api.get(url);
+  return response.data;
+};
+
+export const getDashboardStats = async () => {
+  const response = await api.get('/documents/stats');
   return response.data;
 };
 
@@ -176,5 +183,21 @@ export const getReferralStats = async () => {
 
 export const getReferralHistory = async (page = 0, size = 20) => {
   const response = await api.get(`/referrals/history?page=${page}&size=${size}`);
+  return response.data;
+};
+
+// Folder APIs
+export const getFolders = async () => {
+  const response = await api.get('/folders');
+  return response.data;
+};
+
+export const createFolder = async (name: string) => {
+  const response = await api.post('/folders', { name });
+  return response.data;
+};
+
+export const addDocumentToFolder = async (folderId: number, documentId: number) => {
+  const response = await api.post(`/folders/${folderId}/documents/${documentId}`);
   return response.data;
 };

@@ -266,6 +266,32 @@ export const ProfileScreen = ({ navigation }: any) => {
             </View>
           </Animated.View>
 
+          {/* UPGRADE BANNER */}
+          {!isPro && (
+            <Animated.View entering={FadeInDown.delay(120).duration(400)}>
+              <TouchableOpacity
+                style={styles.upgradeBanner}
+                onPress={() => navigation.navigate('Subscription')}
+                activeOpacity={0.9}
+              >
+                <LinearGradient
+                  colors={['#08A8C6', '#068A9F']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.upgradeBannerGradient}
+                >
+                  <View style={styles.upgradeBannerContent}>
+                    <View>
+                      <Text style={styles.upgradeBannerTitle}>Upgrade to Pro</Text>
+                      <Text style={styles.upgradeBannerSub}>Get unlimited AI chats & uploads</Text>
+                    </View>
+                    <MaterialIcons name="arrow-forward-ios" size={16} color="#FFFFFF" />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+
           {/* EDIT BUTTON */}
           <Animated.View entering={FadeInDown.delay(150).duration(400)}>
             {!isEditing ? (
@@ -654,4 +680,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 8,
   },
+  upgradeBanner: {
+    marginBottom: 24,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#08A8C6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  upgradeBannerGradient: {
+    padding: 16,
+  },
+  upgradeBannerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  upgradeBannerTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  upgradeBannerSub: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 13,
+  }
 });

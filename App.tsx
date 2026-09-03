@@ -6,6 +6,7 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { UpdateService } from './src/services/UpdateService';
 import { StartIoAds } from './src/services/ads/StartIoAds';
 import { UpdateModal } from './src/components/common/UpdateModal';
+import { InAppBanner } from './src/components/InAppBanner';
 
 import { View, Text } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -75,6 +76,7 @@ export default function App() {
       <StatusBar style="light" />
       <AppNavigator />
       <UpdateModal />
+      <InAppBanner />
       <Toast config={toastConfig} />
     </SafeAreaProvider>
   );
